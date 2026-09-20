@@ -667,6 +667,77 @@ El detalle sigue mostrando lo mismo (el componente es el mismo, con
 > punto — sin ambigüedad. Y la tarjeta con el globo abierto se eleva con
 > `.card:has(.avisos-pop)`, porque si no las tarjetas de abajo lo tapaban.
 
+## 7n. Instalar la app y avisos en el celular (2026-09-20)
+
+### El cartel de instalar hay que escribirlo
+
+Los navegadores **no muestran nada solos**. Sin código propio, la única forma
+de instalar es el menú del navegador, que nadie encuentra. `src/lib/instalable.ts`
+ahora agarra el evento `beforeinstallprompt` y `src/components/Instalar.tsx`
+muestra el cartel.
+
+> **El evento se engancha al importar el módulo, no adentro de un hook.** Chrome
+> lo dispara una sola vez y muy temprano: si React todavía no montó, se pierde
+> y no vuelve más.
+
+Dos mundos que no se parecen: en Android hay botón, en iPhone Safari no ofrece
+nada y lo único posible es explicar *Compartir → Agregar a inicio*.
+
+Posición: en el celular **arriba** (abajo está el formulario fijo) y en pantalla
+grande **abajo a la derecha** (arriba está el estado de guardado). Se verificó
+en el navegador: la primera versión tapaba el badge.
+
+### ⚠️ El sonido de las notificaciones NO lo elige la app
+
+Se propuso en 2014, ningún navegador lo implementó y **se sacó del estándar en
+2018**. La opción `sound:` que estaba en `sw.js` no hacía nada: el navegador ni
+la mira. El `public/sounds/notificacion.mp3` no lo reproduce nadie.
+
+**Lo que sí se puede:** en Android el sonido se elige desde los ajustes del
+teléfono, en el canal de notificaciones de este sitio. Lo elige la persona, no
+la app. En iPhone no hay equivalente.
+
+> La pantalla de Configuración prometía "sonido personalizado" dos veces. Se
+> corrigió: ahora dice dónde se elige. Un texto que promete algo que no pasa es
+> el mismo error que un badge que miente (punto 7b).
+
+### La suscripción se guarda desde el navegador, no por `api/`
+
+`/api/push-token` **aceptaba cualquier `uid` del cuerpo, sin verificar nada**.
+Con el uid de otra persona se podían desviar sus avisos, que llevan el título
+de sus tareas. Estuvo publicado así.
+
+Ahora son dos candados:
+
+- El navegador escribe **directo a Firestore** (`users/{uid}/config/push`), donde
+  `request.auth.uid` lo verifica Google y no se puede falsear.
+- La ruta `api/` sigue existiendo pero **exige el ID token** (`uidDeLaSesion()`
+  en `api/_firebase.ts`) y saca el uid de ahí, nunca del cuerpo.
+
+Otras dos cosas que estaban mal y ya no:
+
+- **La suscripción se copiaba a `localStorage`.** Sobraba —el navegador ya la
+  tiene, se pide con `pushManager.getSubscription()`— y hacía que la pantalla
+  dijera "activado" con el permiso revocado.
+- **Al celular le llegaba el texto de Telegram, con HTML.** Se leía
+  `⏰ <b>Comprar pan</b>`. Ahora hay dos armadores: uno con etiquetas para
+  Telegram y uno plano para la notificación.
+
+### Las claves VAPID son un par y tienen que casar
+
+La pública estaba **pegada en `api/avisar.ts`** y la misma iba en el `.env`. Si
+se despegaban, el aviso salía, el celular lo descartaba y no se quejaba nadie.
+Ahora las dos salen de variables:
+
+| Variable | Prefijo | Dónde se ve |
+|---|---|---|
+| `VITE_VAPID_PUBLIC_KEY` | **lleva** `VITE_` | navegador **y** servidor |
+| `VAPID_PRIVATE_KEY` | **ninguno** | solo el servidor |
+
+> El prefijo no decide quién puede leerla en Vercel: decide si **además** se
+> copia al navegador. Por eso una sola carga de la pública sirve para los dos
+> lados. Y por eso la privada sin prefijo le llega igual a la función.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés

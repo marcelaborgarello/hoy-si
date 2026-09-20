@@ -27,8 +27,33 @@ hora. Ver punto 7m de `AGENTS.md`.
 - [ ] **Falta probarlo de punta a punta**: que lleguen los dos mensajes de
       verdad. Se verificó la interfaz y que se guarda, no el envío.
 
-## Notificaciones en la misma app. Ver. 
-(Estoy lo voy agregando mientras Claude se reestablece)
+## ~~Notificaciones en la misma app~~ ✅ Código hecho el 2026-09-20
+
+Ver punto 7n de `AGENTS.md`. Se arreglaron cuatro cosas: faltaba la clave
+pública en Vercel, el `sw.js` con el manejador de push nunca se había subido,
+al celular le llegaba el HTML de Telegram a la vista, y `/api/push-token`
+aceptaba cualquier `uid` sin verificar.
+
+- [ ] **Cargar `VITE_VAPID_PUBLIC_KEY` en Vercel (Production) + redeploy.**
+      Sin esto no hay avisos: el navegador no se puede suscribir. Verificado
+      bajando el JS publicado (decía `applicationServerKey: void 0`).
+- [ ] **Probar que llegue un aviso de verdad**, con la app cerrada.
+- [ ] **Elegir el sonido** en Ajustes → Aplicaciones → Chrome → Notificaciones
+      → Sitios → `tareas.ginialtech.com`. La app no puede elegirlo (ver 7n).
+- [ ] Confirmar que `firestore.rules` con el camino `users/{uid}/config/push`
+      esté desplegado (`bun run rules`). Sin eso el navegador no puede guardar
+      la suscripción.
+
+## ~~Toast para instalar~~ ✅ Hecho el 2026-09-20
+
+No existía el código: los navegadores no muestran nada solos. Verificado en el
+navegador (Chrome lo ofrece y el cartel aparece con botón **Instalar**).
+
+- [ ] **Verlo en un celular de verdad**, y en iPhone que la instrucción de
+      *Compartir → Agregar a inicio* se entienda.
+- [ ] Hoy el cartel vuelve a aparecer en cada visita hasta que la instales:
+      recordar que lo cerraste implicaría guardar algo en el navegador, y eso
+      **se pregunta primero** (punto 7e de `AGENTS.md`).
 
 ## 1. Mobile first
 

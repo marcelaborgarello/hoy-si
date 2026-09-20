@@ -7,17 +7,23 @@ const log = pino({ name: 'avisar' })
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const SECRET = process.env.CRON_SECRET
 
-// Configurar Web Push con claves VAPID generadas
-// La clave privada viene de Vercel para no exponerla en el código
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
-if (!vapidPrivateKey) {
-  log.error('falta VAPID_PRIVATE_KEY en Vercel')
-} else {
-  webpush.setVapidDetails(
-    'mailto:ginialtech@gmail.com',
-    'BN49kfeQnyY9aTOQdk3O9ZLPIDMYCEu71OlyxWMaHeK4eNtYHo4n0YDVXsy9HCwt5nMKTjY14mz7li_ePQ58bb8',
-    vapidPrivateKey,
+/**
+ * Claves de Web Push. Son un PAR y tienen que casar: si la pública con la que
+ * se suscribió el navegador no es la misma con la que se firma acá, el aviso
+ * sale, el celular lo descarta y no se queja nadie. Por eso las dos salen de
+ * la misma variable y no hay ninguna pegada en el código.
+ */
+const VAPID_PUBLICA = process.env.VITE_VAPID_PUBLIC_KEY
+const VAPID_PRIVADA = process.env.VAPID_PRIVATE_KEY
+const pushListo = Boolean(VAPID_PUBLICA && VAPID_PRIVADA)
+
+if (!pushListo) {
+  log.error(
+    { publica: VAPID_PUBLICA ? 'ok' : 'FALTA', privada: VAPID_PRIVADA ? 'ok' : 'FALTA' },
+    'avisos del celular apagados: faltan claves VAPID en Vercel',
   )
+} else {
+  webpush.setVapidDetails('mailto:ginialtech@gmail.com', VAPID_PUBLICA!, VAPID_PRIVADA!)
 }
 
 /**
@@ -108,34 +114,51 @@ async function enviar(
   return r.ok
 }
 
-/** El texto que llega al teléfono. Distinto si es el anticipado o el de la hora. */
-function armarMensaje(t: TareaDoc, faltan: number): string {
-  const cuando =
-    faltan <= 0
-      ? `Es <b>ahora</b>, a las ${t.dueTime}`
-      : faltan >= 1440
-        ? `Es mañana a las ${t.dueTime}`
-        : faltan >= 60
-          ? `Es en ${Math.round(faltan / 60)} h, a las ${t.dueTime}`
-          : `Es en ${faltan} min, a las ${t.dueTime}`
+/** Cuándo es, en palabras. Sirve igual para Telegram y para el celular. */
+function cuandoEs(t: TareaDoc, faltan: number, negrita: (s: string) => string): string {
+  if (faltan <= 0) return `Es ${negrita('ahora')}, a las ${t.dueTime}`
+  if (faltan >= 1440) return `Es mañana a las ${t.dueTime}`
+  if (faltan >= 60) return `Es en ${Math.round(faltan / 60)} h, a las ${t.dueTime}`
+  return `Es en ${faltan} min, a las ${t.dueTime}`
+}
 
+/** El mensaje de Telegram, que entiende HTML. */
+function armarMensaje(t: TareaDoc, faltan: number): string {
   const desc = t.description?.trim()
   return [
     `⏰ <b>${escapar(t.title ?? '')}</b>`,
     desc ? `\n${escapar(desc.slice(0, 300))}` : '',
-    `\n${cuando}.`,
+    `\n${cuandoEs(t, faltan, (s) => `<b>${s}</b>`)}.`,
   ].join('')
 }
 
+/**
+ * El cuerpo del aviso del celular.
+ *
+ * ⚠️ Acá NO va HTML. Una notificación del sistema muestra el texto tal cual:
+ * mandarle el mensaje de Telegram hacía que se leyera «⏰ <b>Comprar pan</b>»
+ * con las etiquetas a la vista. El título va aparte, así que el cuerpo
+ * arranca en la descripción.
+ */
+function armarCuerpoPush(t: TareaDoc, faltan: number): string {
+  const desc = t.description?.trim()
+  const cuando = `${cuandoEs(t, faltan, (s) => s)}.`
+  return desc ? `${desc.slice(0, 150)}\n${cuando}` : cuando
+}
+
+/**
+ * Manda el aviso al celular.
+ *
+ * Nada de `sound`: no existe en las notificaciones web (se sacó del estándar
+ * en 2018). El sonido lo pone el sistema y se cambia desde el teléfono.
+ */
 async function enviarPush(
   token: string,
   titulo: string,
   cuerpo: string,
+  taskId: string,
 ): Promise<boolean> {
-  if (!vapidPrivateKey) {
-    log.warn('notificacion push no enviada: falta VAPID_PRIVATE_KEY en Vercel')
-    return false
-  }
+  if (!pushListo) return false
 
   try {
     const subscription = JSON.parse(token) as webpush.PushSubscription
@@ -144,16 +167,23 @@ async function enviarPush(
       title: titulo,
       body: cuerpo,
       icon: '/iconos/icono-192.png',
-      sound: '/sounds/notificacion.mp3',
-      vibrate: [200, 100, 200],
-      url: 'https://tareas.ginialtech.com',
+      // Una etiqueta por tarea: el aviso anticipado y el de la hora son dos
+      // cosas distintas y no tienen que taparse entre sí.
+      tag: `tarea-${taskId}`,
+      url: APP_URL,
     })
 
     await webpush.sendNotification(subscription, payload)
-    log.info({ titulo }, 'notificacion push enviada')
     return true
   } catch (err) {
-    log.error({ err }, 'error al enviar notificacion push')
+    // 404 y 410 quieren decir que ese teléfono ya no existe para nosotros
+    // (desinstaló la app o revocó el permiso). No es un error a mirar.
+    const status = (err as { statusCode?: number }).statusCode
+    if (status === 404 || status === 410) {
+      log.info({ status }, 'suscripcion vencida, se ignora')
+      return false
+    }
+    log.error({ err }, 'no se pudo enviar el aviso al celular')
     return false
   }
 }
@@ -268,18 +298,23 @@ export async function POST(request: Request): Promise<Response> {
 
     // Resta de dos números absolutos: no hay zonas horarias de por medio.
     const faltanMin = Math.round((t.dueAt! - t.nextNotifyAt!) / 60_000)
-    const mensaje = armarMensaje(t, faltanMin)
 
     // Enviar por Telegram si está conectado
     let telegramOk = false
     if (chatId) {
-      telegramOk = await enviar(chatId, mensaje, armarBotones(uid, doc.id))
+      telegramOk = await enviar(chatId, armarMensaje(t, faltanMin), armarBotones(uid, doc.id))
     }
 
-    // Enviar push si tiene token
+    // Enviar al celular si dejó los avisos activados. El texto es otro:
+    // Telegram entiende HTML y una notificación del sistema no.
     let pushOk = false
     if (pushToken) {
-      pushOk = await enviarPush(pushToken, t.title || 'Hoy sí', mensaje)
+      pushOk = await enviarPush(
+        pushToken,
+        t.title || 'Hoy sí',
+        armarCuerpoPush(t, faltanMin),
+        doc.id,
+      )
     }
 
     // Se avanza igual si alguno falló: reintentar en loop es peor que

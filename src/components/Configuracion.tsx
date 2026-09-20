@@ -112,51 +112,65 @@ export function Configuracion({ config: cfg, nombreDeGoogle, uid, onClose }: Pro
           </section>
 
           <section className="section">
-            <h3>Avisos push (sonido personalizado)</h3>
+            <h3>Avisos en este celular</h3>
+
             {!push.soportado ? (
-              <p className="ayuda">Tu navegador no soporta notificaciones push.</p>
-            ) : push.habilitado ? (
+              <p className="ayuda">
+                Este navegador no puede mostrar avisos. Desde el celular, probá con Chrome.
+              </p>
+            ) : push.activado ? (
               <>
                 <div className="conectado">
-                  <span className="dot" /> Notificaciones activadas
+                  <span className="dot" /> Avisos activados
                 </div>
                 <p className="ayuda">
-                  Te voy a avisar con un sonido especial cuando se acerque el horario de una tarea.
-                  Solo funciona con las tareas que tengan hora.
+                  Te aviso acá cuando se acerque el horario de una tarea, aunque tengas la app
+                  cerrada. Solo funciona con las tareas que tengan hora.
                 </p>
+                <p className="ayuda chico">
+                  El sonido lo elegís vos desde los ajustes del celular, en las notificaciones de
+                  esta app. Desde acá no se puede cambiar.
+                </p>
+                <button
+                  className="btn sm danger"
+                  onClick={() => void push.desactivar()}
+                  disabled={push.cargando}
+                >
+                  {push.cargando ? 'Un segundo…' : 'Apagar los avisos'}
+                </button>
               </>
+            ) : push.bloqueado ? (
+              <p className="ayuda">
+                Los avisos están bloqueados para esta app. Se vuelven a permitir desde los ajustes
+                del navegador, en los permisos de este sitio.
+              </p>
             ) : (
               <>
                 <p className="ayuda">
-                  Activá las notificaciones push y te aviso con un sonido personalizado cuando se acerque el horario de una tarea.
-                  Es un toque: el navegador te va a pedir permiso.
+                  Te aviso acá cuando se acerque el horario de una tarea, aunque tengas la app
+                  cerrada. Es un toque: el navegador te va a pedir permiso.
                 </p>
                 <button
                   className="btn primary"
-                  onClick={async () => {
-                    const ok = await push.pedirPermiso()
-                    if (!ok) {
-                      // Error ya se maneja en el hook
-                    }
-                  }}
-                  disabled={!push.puedePedir || push.cargando}
+                  onClick={() => void push.activar()}
+                  disabled={push.cargando || push.faltaConfigurar}
                 >
-                  {push.cargando ? 'Activando…' : push.permiso === 'denied' ? 'Permisos denegados' : 'Activar notificaciones'}
+                  {push.cargando ? 'Activando…' : 'Activar los avisos'}
                 </button>
+
                 {push.resultado === 'exito' && (
-                  <p className="ayuda" style={{ color: 'var(--accent)', fontSize: 13 }}>
-                    ✓ Notificaciones activadas. Vas a recibir avisos con tu sonido personalizado.
+                  <p className="ayuda" style={{ color: 'var(--accent)' }}>
+                    ✓ Listo. Te voy a avisar acá.
                   </p>
                 )}
                 {push.resultado === 'error' && (
-                  <p className="ayuda" style={{ color: 'var(--accent-hot)', fontSize: 13 }}>
-                    ✗ No se pudieron activar las notificaciones. Revisá la configuración de tu navegador.
+                  <p className="ayuda" style={{ color: 'var(--late)' }}>
+                    No se pudieron activar. Probá de nuevo en un rato.
                   </p>
                 )}
-                {push.permiso === 'denied' && (
-                  <p className="ayuda chico">
-                    Denegaste los permisos. Para activarlos, revisá la configuración de tu navegador.
-                  </p>
+                {/* Pista para quien desarrolla: no entra al build de producción. */}
+                {import.meta.env.DEV && push.faltaConfigurar && (
+                  <code>falta VITE_VAPID_PUBLIC_KEY en el entorno</code>
                 )}
               </>
             )}

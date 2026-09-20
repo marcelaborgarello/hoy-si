@@ -1,12 +1,9 @@
 /**
  * Service worker de "Hoy sí".
  *
- * Hace una sola cosa: que la app ABRA sin internet. Las tareas son otro tema
- * —eso lo resuelve el caché de Firestore— y está anotado como pendiente.
- *
- * Escrito a mano y a propósito: lo importante acá es la lista de rutas que
- * NO se tocan, y conviene tenerla a la vista en vez de confiarla a la
- * configuración de una librería.
+ * Hace dos cosas:
+ * 1. Que la app ABRA sin internet (caché de archivos básicos)
+ * 2. Manejar notificaciones push con sonido personalizado
  */
 
 const CACHE = 'hoy-si-v1'
@@ -77,5 +74,67 @@ self.addEventListener('fetch', (e) => {
         }
         return Response.error()
       }),
+  )
+})
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * AVISOS QUE LLEGAN CON LA APP CERRADA
+ *
+ * ⚠️ NO se puede elegir el sonido desde acá. La propiedad `sound` se propuso
+ * en 2014, ningún navegador la implementó y la sacaron del estándar en 2018.
+ * Si aparece de nuevo en este archivo, es humo: el navegador ni la mira.
+ *
+ * El sonido lo decide el sistema. En Android se puede cambiar desde los
+ * ajustes del teléfono, en el canal de notificaciones de este sitio — pero
+ * eso lo elige quien usa la app, no este código.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+self.addEventListener('push', (e) => {
+  if (!e.data) return
+
+  // Si lo que llega no es el JSON esperado, igual hay que mostrar algo: un
+  // aviso mudo es peor que uno genérico, porque la tarea se pasa lo mismo.
+  let data = {}
+  try {
+    data = e.data.json()
+  } catch {
+    data = { body: e.data.text() }
+  }
+
+  const titulo = data.title || 'Hoy sí'
+
+  e.waitUntil(
+    self.registration.showNotification(titulo, {
+      body: data.body || '',
+      icon: data.icon || '/iconos/icono-192.png',
+      badge: '/iconos/icono-192.png',
+      vibrate: [200, 100, 200],
+      // Una etiqueta por tarea: dos avisos distintos no se pisan entre sí,
+      // pero el mismo aviso repetido no se apila.
+      tag: data.tag || 'hoy-si',
+      requireInteraction: false,
+      data: { url: data.url || '/' },
+    }),
+  )
+})
+
+/**
+ * Al tocar el aviso se va a la app.
+ *
+ * Primero se busca una ventana ya abierta y se le da foco: abrir una nueva
+ * cada vez deja tres copias de la lista dando vueltas.
+ */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+
+  const destino = new URL(e.notification.data?.url || '/', self.location.origin)
+
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+      for (const v of ventanas) {
+        if (new URL(v.url).origin === destino.origin && 'focus' in v) return v.focus()
+      }
+      return self.clients.openWindow(destino.href)
+    }),
   )
 })

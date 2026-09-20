@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Celebration } from './components/Celebration'
 import { Configuracion } from './components/Configuracion'
+import { Instalar } from './components/Instalar'
 import { Menu } from './components/Menu'
 import { SignIn } from './components/SignIn'
 import { TaskCard } from './components/TaskCard'
@@ -257,6 +258,9 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
       )}
 
       {party && <Celebration key={party} message={party} onDone={() => setParty(null)} />}
+
+      {/* Se esconde solo si ya está instalada o si el navegador no lo ofrece. */}
+      <Instalar />
     </div>
   )
 }
