@@ -56,6 +56,19 @@ export const TaskSchema = z.object({
    */
   notifyBeforeMin: z.number().nullable().default(null),
   /**
+   * El horario de la tarea resuelto a un momento absoluto (epoch ms).
+   *
+   * ⚠️ Existe porque el servidor corre en UTC y el navegador en la zona de
+   * quien usa la app. Si el servidor hiciera `new Date(año, mes, día, hora)`
+   * con `dueDate` y `dueTime`, entendería "15:36" como 15:36 UTC y se
+   * equivocaría por las horas de diferencia que haya.
+   *
+   * Lo calcula el navegador, que es el único que conoce la zona correcta, y
+   * el servidor solo compara números. **En `api/` no se arma ninguna fecha a
+   * partir de `dueDate`/`dueTime`.**
+   */
+  dueAt: z.number().nullable().default(null),
+  /**
    * Momento exacto (epoch ms) del PRÓXIMO aviso pendiente. null = no hay.
    *
    * Existe para que el servidor pueda preguntar "¿qué avisos tocan ahora?" con

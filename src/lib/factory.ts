@@ -1,5 +1,5 @@
 import type { NewTask, Task } from '../types/task'
-import { proximoAviso } from './alertas'
+import { momentoDeLaTarea, proximoAviso } from './alertas'
 
 export function newId(): string {
   return crypto.randomUUID()
@@ -21,9 +21,9 @@ export function buildTask(input: NewTask): Omit<Task, 'id'> {
     notifyAtTime: input.notifyAtTime ?? true,
     notifyBeforeMin: input.notifyBeforeMin ?? null,
     notes: [],
-  } satisfies Omit<Task, 'id' | 'nextNotifyAt'>
+  } satisfies Omit<Task, 'id' | 'nextNotifyAt' | 'dueAt'>
 
-  // El momento del próximo aviso se guarda junto con la tarea: es lo que el
-  // servidor consulta para saber a quién avisarle.
-  return { ...base, nextNotifyAt: proximoAviso(base) }
+  // El horario resuelto y el próximo aviso se guardan junto con la tarea: es
+  // lo que el servidor consulta, y no puede calcularlos porque corre en UTC.
+  return { ...base, dueAt: momentoDeLaTarea(base), nextNotifyAt: proximoAviso(base) }
 }

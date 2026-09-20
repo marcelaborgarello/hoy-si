@@ -59,6 +59,18 @@ export function momentosDeAviso(
   return momentos
 }
 
+/**
+ * El horario de la tarea como momento absoluto, o null si no tiene hora.
+ * Se guarda en el documento para que el servidor no tenga que calcularlo:
+ * él corre en UTC y se equivocaría de zona.
+ */
+export function momentoDeLaTarea(
+  task: Pick<Task, 'dueDate' | 'dueTime'>,
+): number | null {
+  if (!task.dueDate || !task.dueTime) return null
+  return dueMoment(task.dueDate, task.dueTime)
+}
+
 /** Si la tarea tiene al menos un aviso elegido. Destildar los dos = apagado. */
 export function tieneAlgunAviso(
   task: Pick<Task, 'notifyAtTime' | 'notifyBeforeMin'>,

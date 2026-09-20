@@ -1128,13 +1128,19 @@ button.mini:not(:disabled):hover {
   z-index: 24;
 }
 
+/**
+ * En el celular el globo se ancla a la PANTALLA, no al botón: anclado al
+ * botón se salía por la izquierda y quedaba cortado, porque el botón está
+ * pegado al borde derecho y el globo se extiende hacia adentro.
+ */
 .avisos-pop {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  top: auto;
   z-index: 25;
-  width: max-content;
-  max-width: min(300px, 88vw);
+  max-width: none;
   background: var(--bg-soft);
   border: 1px solid var(--border-hi);
   border-radius: var(--radius);
@@ -1451,6 +1457,17 @@ button.mini:not(:disabled):hover {
   .card-actions {
     grid-column: auto;
     flex-wrap: nowrap;
+  }
+
+  /* Con lugar, el globo vuelve a colgar del botón. */
+  .avisos-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    bottom: auto;
+    width: max-content;
+    max-width: min(300px, 88vw);
   }
 
   /* El formulario deja de estar fijo abajo y vuelve al flujo de la página. */

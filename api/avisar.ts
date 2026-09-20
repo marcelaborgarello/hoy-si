@@ -33,32 +33,34 @@ type TareaDoc = {
   notify?: boolean
   notifyAtTime?: boolean
   notifyBeforeMin?: number | null
+  /** Horario de la tarea ya resuelto por el navegador (epoch ms). */
+  dueAt?: number | null
   nextNotifyAt?: number | null
   status?: string
 }
 
 /**
- * ⚠️ Espejo de `proximoAviso()` de `src/lib/alertas.ts`. Está duplicado a
- * propósito: aquel corre en el navegador con la cadena de imports del cliente,
- * y este en Node. Si se toca la lógica de horarios, hay que tocar los dos.
+ * ⚠️ ACÁ NO SE ARMAN FECHAS. Nunca `new Date(año, mes, día, hora)` a partir de
+ * dueDate/dueTime.
+ *
+ * Este código corre en UTC y el navegador en la zona de quien usa la app.
+ * Interpretar "15:36" acá lo entiende como 15:36 UTC, y se equivoca por las
+ * horas de diferencia que haya. Ya pasó: el mensaje decía "es ahora" cuando
+ * faltaban diez minutos, y el segundo aviso quedaba sin programar porque al
+ * recalcular daba todo "en el pasado".
+ *
+ * El horario resuelto viene en `dueAt`, calculado por el navegador. Acá solo
+ * se comparan y restan números.
  */
-function momentoExacto(dueDate: string, dueTime: string): number {
-  const [y, m, d] = dueDate.split('-').map(Number)
-  const [h, min] = dueTime.split(':').map(Number)
-  return new Date(y, m - 1, d, h, min, 0, 0).getTime()
-}
-
 function proximoAviso(t: TareaDoc, desde: number): number | null {
-  if (!t.notify || t.status === 'done' || !t.dueDate || !t.dueTime) return null
-
-  const exacto = momentoExacto(t.dueDate, t.dueTime)
+  if (!t.notify || t.status === 'done' || !t.dueAt) return null
 
   // Los dos avisos son independientes: puede haber solo el anticipado, solo
   // el de la hora, o los dos. Las tareas viejas no tienen notifyAtTime, y
   // para esas el de la hora va (que es como venían funcionando).
   const momentos: number[] = []
-  if (t.notifyBeforeMin) momentos.push(exacto - t.notifyBeforeMin * 60_000)
-  if (t.notifyAtTime ?? true) momentos.push(exacto)
+  if (t.notifyBeforeMin) momentos.push(t.dueAt - t.notifyBeforeMin * 60_000)
+  if (t.notifyAtTime ?? true) momentos.push(t.dueAt)
 
   return momentos.find((m) => m > desde) ?? null
 }
@@ -127,7 +129,14 @@ export async function POST(request: Request): Promise<Response> {
   for (const doc of pendientes.docs) {
     const uid = doc.ref.parent.parent?.id
     const t = doc.data() as TareaDoc
-    if (!uid || !t.nextNotifyAt || !t.dueTime || !t.title) continue
+
+    // Sin dueAt no se puede saber cuánto falta sin equivocarse de zona. Son
+    // tareas guardadas antes de que ese campo existiera: se apagan y se
+    // reactivan solas la próxima vez que se toque la tarea desde la app.
+    if (!uid || !t.nextNotifyAt || !t.dueTime || !t.title || !t.dueAt) {
+      if (t.nextNotifyAt) await doc.ref.update({ nextNotifyAt: null })
+      continue
+    }
 
     // Lo que corresponda a partir de ahora, sin importar lo que se mandó.
     const siguiente = proximoAviso(t, t.nextNotifyAt)
@@ -154,7 +163,8 @@ export async function POST(request: Request): Promise<Response> {
       continue
     }
 
-    const faltanMin = Math.round((momentoExacto(t.dueDate!, t.dueTime) - t.nextNotifyAt) / 60_000)
+    // Resta de dos números absolutos: no hay zonas horarias de por medio.
+    const faltanMin = Math.round((t.dueAt - t.nextNotifyAt) / 60_000)
     const ok = await enviar(chatId, armarMensaje(t.title, t.dueTime, faltanMin))
 
     // Se avanza igual si Telegram falló: reintentar en loop es peor que

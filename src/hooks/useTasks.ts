@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { NewTask, Note, Task } from '../types/task'
-import { proximoAviso } from '../lib/alertas'
+import { momentoDeLaTarea, proximoAviso } from '../lib/alertas'
 import { newId } from '../lib/factory'
 import { log } from '../lib/logger'
 import { createStore } from '../lib/store'
@@ -88,7 +88,15 @@ export function useTasks(uid: string | null) {
   const guardar = useCallback(
     (task: Task, patch: Partial<Omit<Task, 'id'>>) => {
       const resultado = { ...task, ...patch }
-      return run(store.update(task.id, { ...patch, nextNotifyAt: proximoAviso(resultado) }))
+      return run(
+        store.update(task.id, {
+          ...patch,
+          // El horario resuelto lo calcula acá el navegador, que conoce la
+          // zona. El servidor corre en UTC y no puede hacerlo (ver task.ts).
+          dueAt: momentoDeLaTarea(resultado),
+          nextNotifyAt: proximoAviso(resultado),
+        }),
+      )
     },
     [store, run],
   )
