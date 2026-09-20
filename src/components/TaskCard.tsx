@@ -8,6 +8,7 @@ type Props = {
   onStart: (task: Task) => void
   onOpen: (task: Task) => void
   onToggleAviso: (task: Task) => void
+  onAbrirConfig: () => void
   telegramConectado: boolean
 }
 
@@ -54,6 +55,7 @@ export function TaskCard({
   onStart,
   onOpen,
   onToggleAviso,
+  onAbrirConfig,
   telegramConectado,
 }: Props) {
   const vencida =
@@ -110,6 +112,7 @@ export function TaskCard({
             task={task}
             telegramConectado={telegramConectado}
             onToggleAviso={onToggleAviso}
+            onAbrirConfig={onAbrirConfig}
           />
         )}
 

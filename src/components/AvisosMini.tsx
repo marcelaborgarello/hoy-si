@@ -6,6 +6,8 @@ type Props = {
   task: Task
   telegramConectado: boolean
   onToggleAviso: (task: Task) => void
+  /** Si falta conectar Telegram, el botón lleva ahí en vez de no hacer nada. */
+  onAbrirConfig: () => void
 }
 
 /**
@@ -15,17 +17,20 @@ type Props = {
  * agendada, no que tenga que sonar el teléfono. Se enciende a propósito, por
  * tarea. El de Calendar es un link.
  */
-export function AvisosMini({ task, telegramConectado, onToggleAviso }: Props) {
+export function AvisosMini({ task, telegramConectado, onToggleAviso, onAbrirConfig }: Props) {
   const sinHora = !puedeTenerAlerta(task)
   const link = linkGoogleCalendar(task)
+
+  // Con hora pero sin Telegram, el botón sigue vivo: lleva a conectarlo.
+  const faltaConectar = !sinHora && !telegramConectado
   const puedeAvisar = !sinHora && telegramConectado
 
   const motivoHora = 'Ponele una hora y te puedo avisar'
 
   const tipTelegram = sinHora
     ? motivoHora
-    : !telegramConectado
-      ? 'Conectá Telegram en Configuración'
+    : faltaConectar
+      ? 'Tocá para conectar Telegram y que te avise'
       : task.notify
         ? 'Te aviso por Telegram. Tocá para no recibir aviso'
         : 'Tocá para que te avise por Telegram'
@@ -54,10 +59,10 @@ export function AvisosMini({ task, telegramConectado, onToggleAviso }: Props) {
         <button
           type="button"
           className={`mini${task.notify && puedeAvisar ? ' on' : ' off'}`}
-          disabled={!puedeAvisar}
+          disabled={sinHora}
           aria-pressed={task.notify}
           aria-label={tipTelegram}
-          onClick={() => onToggleAviso(task)}
+          onClick={() => (faltaConectar ? onAbrirConfig() : onToggleAviso(task))}
         >
           <IconoTelegram size={17} />
         </button>

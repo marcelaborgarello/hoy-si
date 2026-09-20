@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Celebration } from './components/Celebration'
 import { Configuracion } from './components/Configuracion'
+import { Menu } from './components/Menu'
 import { SignIn } from './components/SignIn'
 import { TaskCard } from './components/TaskCard'
 import { TaskDetail } from './components/TaskDetail'
@@ -68,6 +69,10 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
   const configAvisos = useConfig(auth.user?.uid ?? null)
   const telegramConectado = Boolean(configAvisos.config.telegramChatId)
 
+  // El nombre elegido gana; si no hay ninguno, se usa el que trae Google.
+  const nombreAMostrar =
+    configAvisos.nombre || auth.user?.displayName || auth.user?.email || 'vos'
+
   const [filter, setFilter] = useState<Filter>('abiertas')
   const [openId, setOpenId] = useState<string | null>(null)
   const [party, setParty] = useState<string | null>(null)
@@ -127,21 +132,12 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
             {backend === 'firestore' ? 'Guardado en la nube' : 'Solo en esta compu'}
           </span>
           {auth.user && (
-            <>
-              <span className="who" title={auth.user.email ?? ''}>
-                {auth.user.displayName ?? auth.user.email}
-              </span>
-              <button
-                className="btn ghost sm"
-                onClick={() => setVerConfig(true)}
-                title="Configuración"
-              >
-                ⚙️ Configuración
-              </button>
-              <button className="btn ghost sm" onClick={() => void auth.signOut()}>
-                Salir
-              </button>
-            </>
+            <Menu
+              nombre={nombreAMostrar}
+              telegramConectado={telegramConectado}
+              onAbrirConfig={() => setVerConfig(true)}
+              onSalir={() => void auth.signOut()}
+            />
           )}
         </div>
       </header>
@@ -222,6 +218,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
                   onOpen={(task) => setOpenId(task.id)}
                   telegramConectado={telegramConectado}
                   onToggleAviso={(t) => void toggleAviso(t)}
+                  onAbrirConfig={() => setVerConfig(true)}
                 />
               ))}
             </div>
@@ -250,7 +247,11 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
       )}
 
       {verConfig && (
-        <Configuracion config={configAvisos} onClose={() => setVerConfig(false)} />
+        <Configuracion
+          config={configAvisos}
+          nombreDeGoogle={auth.user?.displayName ?? auth.user?.email ?? ''}
+          onClose={() => setVerConfig(false)}
+        />
       )}
 
       {party && <Celebration key={party} message={party} onDone={() => setParty(null)} />}

@@ -550,6 +550,41 @@ componente `Avisos.tsx` para que no se desincronicen.
 de Telegram sobre el degradé celeste y el calendario de Google. Nada de emoji
 haciendo de logo.
 
+## 7k. El header: menú, nombre propio y descubrir Telegram
+
+Tres cosas que se hicieron juntas porque son el mismo pedazo de pantalla
+(estaban anotadas en el punto 2b de `docs/pendientes.md`).
+
+**Menú hamburguesa.** Reemplaza lo que estaba suelto en el header. Adentro van
+el nombre, Configuración, el estado de Telegram y Salir. El botón mide
+**44 × 44 px**, que es el mínimo cómodo para el pulgar: va en la dirección del
+pendiente de mobile first, no en contra.
+
+**Nombre propio.** Si está vacío se usa el de Google, que aparece como
+sugerencia en gris.
+
+> **Por qué vive en `users/{uid}/config/perfil` y no junto a los avisos:** las
+> reglas no dejan que el navegador escriba `telegramChatId` —eso solo lo hace el
+> servidor, que es el único que puede comprobar que ese chat le habló al bot—. Y
+> en Firestore, `request.resource.data` es el documento **entero** resultante:
+> si el nombre estuviera en el mismo documento, guardarlo implicaría mandar
+> también el chat y la regla lo rechazaría. Por eso son dos documentos, con una
+> regla cada uno.
+
+**Cómo se entera la gente de que existe Telegram.** El problema era que, sin
+conectarlo, no había forma de descubrir la función salvo chocarse con un botón
+apagado. Tres señales, de menos a más:
+
+1. Un **punto ámbar** sobre el botón del menú cuando falta conectarlo.
+2. Dentro del menú, un cartelito **"Falta Telegram"** al lado de Configuración.
+3. **El botón de Telegram de una tarea lleva a conectarlo.** Si la tarea tiene
+   hora pero falta la cuenta, tocarlo abre Configuración en vez de no hacer
+   nada. Es el que más sirve: aparece justo cuando la persona quiso usarlo.
+
+> Ojo con la diferencia: **sin hora** el botón está deshabilitado de verdad (no
+> hay nada que configurar, falta un dato de la tarea). **Sin Telegram** está
+> apagado pero es clickeable, porque sí hay algo que hacer.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés

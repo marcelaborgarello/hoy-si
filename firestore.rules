@@ -18,9 +18,22 @@ service cloud.firestore {
     // Preferencias de avisos. El chat de Telegram lo escribe el servidor
     // (que usa la cuenta de servicio y se saltea estas reglas), no el
     // navegador: desde el cliente solo se puede leer y desconectar.
-    match /users/{uid}/config/{doc} {
+    match /users/{uid}/config/avisos {
       allow read: if isOwner(uid);
       allow write: if isOwner(uid) && esConfigValida();
+    }
+
+    // El nombre que la persona elige mostrar. Va en un documento aparte del de
+    // avisos a propósito: si estuvieran juntos, escribir el nombre obligaría a
+    // mandar también el chat de Telegram, y la regla de arriba no lo permite.
+    match /users/{uid}/config/perfil {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && esPerfilValido();
+    }
+
+    // Cualquier otro documento de configuración queda cerrado.
+    match /users/{uid}/config/{doc} {
+      allow read, write: if false;
     }
 
     // Códigos de vinculación de Telegram: los crea el navegador y los
@@ -47,6 +60,13 @@ service cloud.firestore {
     let d = request.resource.data;
     return d.get('telegramChatId', null) == null
       && (d.get('avisos', false) is bool);
+  }
+
+  // Solo un nombre, y acotado: esto lo escribe el navegador.
+  function esPerfilValido() {
+    let d = request.resource.data;
+    return d.get('nombre', '') is string
+      && d.get('nombre', '').size() <= 60;
   }
 
   // Validación de forma en el servidor: que un cliente modificado no pueda

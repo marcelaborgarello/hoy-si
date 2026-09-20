@@ -10,6 +10,9 @@ export type Config = {
   avisos: boolean
 }
 
+/** El nombre elegido. Vacío = se usa el que trae Google. */
+export type Perfil = { nombre: string }
+
 const VACIA: Config = { telegramChatId: null, avisos: false }
 
 const BOT = 'hoysi_tareas_bot'
@@ -21,6 +24,7 @@ const BOT = 'hoysi_tareas_bot'
  */
 export function useConfig(uid: string | null) {
   const [config, setConfig] = useState<Config>(VACIA)
+  const [nombre, setNombreLocal] = useState('')
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
@@ -41,6 +45,26 @@ export function useConfig(uid: string | null) {
       },
     )
   }, [uid])
+
+  // El nombre vive en su propio documento (ver firestore.rules).
+  useEffect(() => {
+    const db = getDb()
+    if (!db || !uid) return
+    return onSnapshot(
+      doc(db, `users/${uid}/config/perfil`),
+      (snap) => setNombreLocal((snap.data() as Perfil | undefined)?.nombre ?? ''),
+      (err) => log.error({ scope: 'config' }, `no se pudo leer el perfil: ${err.message}`),
+    )
+  }, [uid])
+
+  const guardarNombre = useCallback(
+    async (valor: string) => {
+      const db = getDb()
+      if (!db || !uid) return
+      await setDoc(doc(db, `users/${uid}/config/perfil`), { nombre: valor.trim().slice(0, 60) })
+    },
+    [uid],
+  )
 
   /**
    * Genera un código de un solo uso y devuelve el link que abre el bot ya
@@ -67,5 +91,5 @@ export function useConfig(uid: string | null) {
     await setDoc(doc(db, `users/${uid}/config/avisos`), { telegramChatId: null, avisos: false })
   }, [uid])
 
-  return { config, cargando, crearLinkDeConexion, desconectar }
+  return { config, nombre, guardarNombre, cargando, crearLinkDeConexion, desconectar }
 }

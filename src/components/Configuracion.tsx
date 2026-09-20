@@ -5,12 +5,18 @@ import { IconoTelegram } from './iconos'
 type Props = {
   /** Viene de App: una sola suscripción para toda la pantalla. */
   config: ReturnType<typeof useConfig>
+  /** El de la cuenta de Google, para mostrarlo como sugerencia. */
+  nombreDeGoogle: string
   onClose: () => void
 }
 
-export function Configuracion({ config: cfg, onClose }: Props) {
-  const { config, cargando, crearLinkDeConexion, desconectar } = cfg
+export function Configuracion({ config: cfg, nombreDeGoogle, onClose }: Props) {
+  const { config, nombre, guardarNombre, cargando, crearLinkDeConexion, desconectar } = cfg
   const [abriendo, setAbriendo] = useState(false)
+  const [nombreEditado, setNombreEditado] = useState(nombre)
+
+  // Si el nombre llega de Firestore después de abrir el panel, se refleja.
+  useEffect(() => setNombreEditado(nombre), [nombre])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -43,6 +49,23 @@ export function Configuracion({ config: cfg, onClose }: Props) {
         </header>
 
         <div className="panel-body">
+          <section className="section">
+            <h3>Tu nombre</h3>
+            <p className="ayuda">
+              Con esto te saluda la app. Si lo dejás vacío, usa el de tu cuenta de Google.
+            </p>
+            <input
+              className="desc-edit"
+              style={{ minHeight: 'auto' }}
+              value={nombreEditado}
+              maxLength={60}
+              placeholder={nombreDeGoogle}
+              onChange={(e) => setNombreEditado(e.target.value)}
+              onBlur={() => void guardarNombre(nombreEditado)}
+              aria-label="Tu nombre"
+            />
+          </section>
+
           <section className="section">
             <h3>Avisos por Telegram</h3>
 

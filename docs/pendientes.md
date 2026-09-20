@@ -88,16 +88,24 @@ van a vivir el selector de tema del punto 2, el nombre, salir y la configuració
 de Telegram — así que **conviene hacerlo antes que el selector de tema**, o hay
 que ubicarlo dos veces.
 
-- [ ] Menú hamburguesa con lo que hoy está suelto en el header.
-- [ ] Decidir si en pantalla grande sigue inline o también va al menú. (Si se
-      hace mobile first primero, esta respuesta sale sola.)
+- [x] ~~Menú hamburguesa con lo que hoy está suelto en el header.~~
+      ✅ **Hecho el 2026-09-20.** Adentro: nombre, Configuración, estado de
+      Telegram y Salir. El botón mide 44 × 44 px.
+- [ ] Cuando se haga el selector de tema (punto 2), va **adentro de este menú**.
+- [ ] Decidir si en pantalla grande sigue así o cambia. Por ahora es igual en
+      las dos medidas; la respuesta sale sola al hacer mobile first.
 
 **b) Elegir qué nombre mostrar.** Hoy muestra el que trae Google. Poder poner el
 que una quiera.
 
-- [ ] Campo para el nombre propio, con el de Google como valor inicial.
-- [ ] Decidir dónde se guarda: en Firestore te sigue al celular, en el navegador
-      no. Anotado, sin decidir.
+- [x] ~~Campo para el nombre propio, con el de Google como valor inicial.~~
+      ✅ **Hecho el 2026-09-20**, en Configuración → Tu nombre. Vacío = el de
+      Google, que aparece como sugerencia en gris.
+- [x] ~~Decidir dónde se guarda:~~ **Firestore**, así te sigue al celular. Vive
+      en `users/{uid}/config/perfil`, **en un documento aparte del de avisos**:
+      las reglas no dejan que el navegador escriba el chat de Telegram, y como
+      la regla mira el documento entero, tenerlos juntos haría que guardar el
+      nombre arrastrara el chat y fuera rechazado. Ver punto 7k de `AGENTS.md`.
 
 **Por qué igual hay que tocar `firestore.rules` para un campo más** (la pregunta
 salió y la respuesta no es obvia):
