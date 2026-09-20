@@ -6,6 +6,7 @@ type PushState = {
   permiso: NotificationPermission
   token: string | null
   cargando: boolean
+  ultimoResultado: 'exito' | 'error' | null
 }
 
 /**
@@ -20,6 +21,7 @@ export function usePush(uid: string | null) {
     permiso: 'default',
     token: localStorage.getItem('push-token'),
     cargando: false,
+    ultimoResultado: null,
   })
 
   useEffect(() => {
@@ -36,11 +38,14 @@ export function usePush(uid: string | null) {
 
       if (permiso === 'granted') {
         await suscribir()
+        setEstado((prev) => ({ ...prev, ultimoResultado: 'exito' }))
         return true
       }
+      setEstado((prev) => ({ ...prev, ultimoResultado: 'error' }))
       return false
     } catch (err) {
       log.error({ scope: 'push' }, `error al pedir permiso: ${String(err)}`)
+      setEstado((prev) => ({ ...prev, ultimoResultado: 'error' }))
       return false
     }
   }
@@ -71,10 +76,21 @@ export function usePush(uid: string | null) {
     }
   }
 
+  // Limpiar el resultado después de 5 segundos
+  useEffect(() => {
+    if (estado.ultimoResultado) {
+      const timer = setTimeout(() => {
+        setEstado((prev) => ({ ...prev, ultimoResultado: null }))
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [estado.ultimoResultado])
+
   return {
     ...estado,
     pedirPermiso,
     puedePedir: estado.soportado && estado.permiso === 'default',
     habilitado: estado.permiso === 'granted',
+    resultado: estado.ultimoResultado,
   }
 }

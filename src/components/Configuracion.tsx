@@ -133,11 +133,26 @@ export function Configuracion({ config: cfg, nombreDeGoogle, uid, onClose }: Pro
                 </p>
                 <button
                   className="btn primary"
-                  onClick={() => void push.pedirPermiso()}
-                  disabled={!push.puedePedir}
+                  onClick={async () => {
+                    const ok = await push.pedirPermiso()
+                    if (!ok) {
+                      // Error ya se maneja en el hook
+                    }
+                  }}
+                  disabled={!push.puedePedir || push.cargando}
                 >
-                  {push.permiso === 'denied' ? 'Permisos denegados' : 'Activar notificaciones'}
+                  {push.cargando ? 'Activando…' : push.permiso === 'denied' ? 'Permisos denegados' : 'Activar notificaciones'}
                 </button>
+                {push.resultado === 'exito' && (
+                  <p className="ayuda" style={{ color: 'var(--accent)', fontSize: 13 }}>
+                    ✓ Notificaciones activadas. Vas a recibir avisos con tu sonido personalizado.
+                  </p>
+                )}
+                {push.resultado === 'error' && (
+                  <p className="ayuda" style={{ color: 'var(--accent-hot)', fontSize: 13 }}>
+                    ✗ No se pudieron activar las notificaciones. Revisá la configuración de tu navegador.
+                  </p>
+                )}
                 {push.permiso === 'denied' && (
                   <p className="ayuda chico">
                     Denegaste los permisos. Para activarlos, revisá la configuración de tu navegador.
