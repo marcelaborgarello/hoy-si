@@ -34,6 +34,17 @@ async function responder(chatId: number, texto: string): Promise<void> {
   }
 }
 
+/**
+ * Diagnóstico: dice si el servidor ve las variables, nunca su contenido.
+ * Sirve para saber si faltan o si quedaron cargadas en el entorno equivocado.
+ */
+export async function GET(): Promise<Response> {
+  return Response.json({
+    TELEGRAM_BOT_TOKEN: TOKEN ? `ok (${TOKEN.length} caracteres)` : 'FALTA',
+    TELEGRAM_WEBHOOK_SECRET: SECRET ? `ok (${SECRET.length} caracteres)` : 'FALTA',
+  })
+}
+
 export async function POST(request: Request): Promise<Response> {
   if (!TOKEN || !SECRET) {
     log.error('faltan TELEGRAM_BOT_TOKEN o TELEGRAM_WEBHOOK_SECRET')
