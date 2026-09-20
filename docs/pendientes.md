@@ -136,25 +136,64 @@ La app ya cumple casi todos los requisitos sin haber hecho nada a propósito:
 
 Viene de `AGENTS.md`, repetido acá porque es lo que frena todo lo demás.
 
-- [ ] **BLOQUEANTE — autorizar el dominio.** Firebase Console → Authentication →
-      Settings → **Authorized domains** → agregar `tareas.ginialtech.com`.
-      Sin esto el login con Google falla en producción aunque el sitio cargue bien.
-- [ ] **Desplegar las reglas con `dueTime`**: `bun run fb:login` y después
-      `bun run rules`. No es bloqueante (las reglas viejas no rechazan campos que
-      no conocen), pero hasta que se haga no se valida ese campo en el servidor.
-- [ ] **Revocar la clave de la cuenta de servicio** que se borró del disco pero
-      sigue viva en Google Cloud: IAM → Cuentas de servicio →
+- [x] ~~**Autorizar el dominio**~~ — hecho el 2026-09-20, verificado contra la
+      API de Identity Toolkit.
+- [x] ~~**Desplegar las reglas con `dueTime`**~~ — hecho. Además hubo que
+      arreglarlas: leían `d.dueTime` directo y **eso rompía toda escritura sobre
+      las tareas viejas**, que no tienen ese campo. Ahora todo campo opcional se
+      lee con `d.get('campo', default)`.
+- [ ] **Revocar la clave vieja de la cuenta de servicio** que se borró del disco
+      pero sigue viva en Google Cloud: IAM → Cuentas de servicio →
       `firebase-adminsdk-fbsvc@todo-list-846e2` → Claves.
+      ⚠️ Ojo: **no revocar la nueva**, que es la que usa `FIREBASE_SERVICE_ACCOUNT`
+      en Vercel y hace andar el bot.
+- [ ] **Rotar el token del bot de Telegram.** Se pegó completo en una
+      conversación. Se decidió dejarlo para después y sin aviso (`/revoke` en
+      @BotFather + actualizar la variable en Vercel).
 
 ---
 
-## 5. En curso en otra conversación
+## 5. Telegram: vinculado, pero todavía no avisa
 
-Los últimos commits (`Webhook del bot de Telegram`, `Redeploy para tomar las
-variables de Telegram`) son más nuevos que lo que cuenta el punto 7h de
-`AGENTS.md`, que todavía dice que Telegram está apagado. **Antes de tocar
-`api/telegram.ts` o `src/lib/alertas.ts`, chequear en qué quedó** — y actualizar
-ese punto de `AGENTS.md` cuando cierre.
+Estado al cierre del **2026-09-20**. El punto 7h de `AGENTS.md` quedó viejo:
+decía que Telegram estaba apagado y ya no lo está.
+
+**Lo que anda y está probado en producción:**
+
+- Bot `@hoysi_tareas_bot`, webhook registrado en `/api/telegram`.
+- Vinculación **de un toque**: la app arma un código de un solo uso, lo mete en
+  el link del bot y el servidor ata el chat a la cuenta. Sin copiar ni pegar.
+- Pantalla de **Configuración** con el estado en vivo.
+- `FIREBASE_SERVICE_ACCOUNT` cargada y conectando a Firestore.
+
+**Lo que falta, y es lo único que importa ahora:**
+
+- [ ] **Nadie despierta a la hora justa.** Falta la tarea programada (Vercel
+      Cron) que mire qué tarea está por vencer y mande el mensaje.
+- [ ] Marcar la tarea como "ya avisada" para no mandar el aviso en loop.
+- [ ] Decidir si el aviso es por tarea (elegible) o para todas las que tengan
+      hora. Hoy el botón de Telegram en la tarea **solo informa**, no elige.
+
+---
+
+## 5b. ⚠️ `tsc --noEmit` no sirve en este proyecto
+
+**Hallazgo del 2026-09-20, verificado rompiendo el código a propósito.**
+
+`tsconfig.json` tiene `"files": []` y solo referencias. Entonces:
+
+| Comando | Con un error real en `api/` |
+|---|---|
+| `bunx tsc --noEmit` | **pasa, salida 0** ❌ |
+| `bunx tsc -b` | falla correctamente ✅ |
+
+O sea que el comando de la regla de oro de ginialym **acá miente siempre**, no
+solo con ese bug. Por eso existe ahora **`bun run check`** (= `tsc -b`), que es
+el que hay que correr, y el que ya corre `bun run build` por dentro.
+
+- [ ] Ver si en ginialym pasa lo mismo. Si ese `tsconfig.json` también usa
+      referencias con `files: []`, la regla de oro de ahí está apoyada en un
+      comando que no chequea nada.
 
 ---
 
