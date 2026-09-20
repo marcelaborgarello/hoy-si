@@ -346,6 +346,35 @@ Hay que tener presente la distinción, porque se presta a confusión:
 4. Groq: las ideas que encajan con el punto 1 del documento son partir una
    tarea grande en pasos chicos y estimar cuánto lleva de verdad.
 
+## 7e-bis. El dominio en la pantalla de Google (cerrado)
+
+Se cambió el `authDomain` a `tareas.ginialtech.com` para que el login no
+mostrara `todo-list-846e2.firebaseapp.com`. Funcionó, con tres piezas:
+
+1. `vercel.json` proxea `/__/auth/*` a `todo-list-846e2.firebaseapp.com`.
+2. En Google Cloud → Credenciales → cliente OAuth web hay que cargar **dos
+   cosas distintas**, y confundirlas es el error típico:
+   - *Orígenes autorizados de JavaScript*: solo el origen, **sin ruta**
+     (`https://tareas.ginialtech.com`).
+   - *URIs de redireccionamiento autorizados*: la ruta completa
+     (`https://tareas.ginialtech.com/__/auth/handler`).
+3. `VITE_FIREBASE_AUTH_DOMAIN=tareas.ginialtech.com` en Vercel + redeploy.
+   **En el `.env` local NO se cambia**: `localhost` no proxea esas rutas.
+
+Detalles que costaron:
+
+- Vercel **no deja** marcar una variable `VITE_*` como `secret`, solo `config`:
+  el prefijo es público por definición. Hubo que borrar la variable y crearla
+  de nuevo para cambiar esa propiedad.
+- Las variables se compilan dentro del bundle: **cambiarlas sin redeploy no
+  hace nada**. Se verifica bajando el JS publicado y buscando el dominio.
+
+> **Cerrado, no volver a intentarlo:** Google muestra siempre el **dominio
+> registrable** (`ginialtech.com`) y descarta el subdominio. El campo "Dominios
+> autorizados" de la pantalla de consentimiento **no acepta subdominios**. Lo
+> único que puede reemplazar ese texto es el **nombre de la app** de la pantalla
+> de consentimiento.
+
 ## 7f. Logs: pino, y cero `console`
 
 Pedido textual: *"Hay que poner pino para los logs en vercel. No me pongas ni un
