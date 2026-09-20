@@ -1,6 +1,7 @@
 {
   "name": "Hoy sí",
   "short_name": "Hoy sí",
+  "id": "/",
   "description": "Anotala, arrancá, tachala. Una cosa por vez.",
   "lang": "es-AR",
   "dir": "ltr",
