@@ -585,6 +585,42 @@ apagado. Tres señales, de menos a más:
 > hay nada que configurar, falta un dato de la tarea). **Sin Telegram** está
 > apagado pero es clickeable, porque sí hay algo que hacer.
 
+## 7l. El CSS es mobile first
+
+Desde el **2026-09-20**, `src/index.css` está escrito al revés de como se suele:
+
+> **Todo lo que está sin `@media` son los estilos del CELULAR.** Las pantallas
+> grandes se agregan después, en **un solo** bloque `@media (min-width: 620px)`
+> al final, con lo que cambia cuando hay lugar de sobra.
+
+**No queda ningún `@media (max-width: …)`.** Si aparece uno, algo se escribió al
+revés: en vez de parchear la pantalla chica, se corrige la base.
+
+Por qué: esta app se usa parada, con el celular en la mano, que es justo el
+momento en que se anota lo que se viene pateando. Si la pantalla chica es un
+parche al final, ese momento se pierde.
+
+Lo que cambia entre una medida y otra:
+
+| | Celular (base) | `min-width: 620px` |
+|---|---|---|
+| Formulario | **fijo abajo**, al alcance del pulgar | arriba, en el flujo |
+| Tarjeta | 2 columnas, botones en su propia fila | 3 columnas, botones al costado |
+| Zonas de toque | 40–44 px | compactas |
+
+**El círculo de tachar se ve de 26 px pero se toca en 44.** El truco es padding
+con `background-clip: content-box`: agranda el área sin agrandar el dibujo. Si
+se toca esa regla, no achicar el `width` para "arreglar" cómo se ve.
+
+El formulario fijo usa `env(safe-area-inset-bottom)` para no quedar debajo de la
+barra de gestos del iPhone, y `.app` lleva `padding-bottom` de sobra para que la
+última tarea no quede tapada.
+
+> ⚠️ **Lo que quedó sin verificar en pantalla real:** la ventana del navegador no
+> se dejó achicar durante el trabajo, así que la comprobación fue leyendo las
+> reglas CSS cargadas, no mirando el render. Falta probarlo en un teléfono de
+> verdad y con el teclado abierto (ver `docs/pendientes.md`).
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés

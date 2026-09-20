@@ -8,6 +8,14 @@ Escrito el **2026-09-20**. Si algo se hace, se tacha acá y se registra en `AGEN
 
 ---
 
+## Primero a hacer cuando leas pendientes. Poner un link en telegram a la tarea de ser posible
+-- Cuando me llega el telegram, que pueda abrir el link para ir a la app. Ahí ya vería la tarea
+
+## Ver que pueda poner 2 alertas. El de la hora exacta llega bien. Falta si quiero que me avise antes. Una vez completada, borrar estas líneas.
+
+## Notificaciones en la misma app. Ver. 
+(Estoy lo voy agregando mientras Claude se reestablece)
+
 ## 1. Mobile first
 
 > **El nombre correcto es "mobile first"** (móvil primero). No es "first mobile".
@@ -29,13 +37,22 @@ la pantalla chica es un parche, ese momento se pierde.
 
 **Qué habría que hacer:**
 
-- [ ] Dar vuelta `src/index.css`: que los estilos base sean los del celular y
-      las pantallas grandes entren por `@media (min-width: 620px)`.
-- [ ] Revisar que todo lo que se toca tenga al menos **44 × 44 px** (los botones
-      *Empecé* / *Terminé*, la ✕ de la fecha, el check de las notas).
-- [ ] Que el formulario de anotar quede **al alcance del pulgar**, no arriba de todo.
-- [ ] Probar con el teclado del celular abierto: que no tape el botón *Anotar*.
-- [ ] Verificarlo en un teléfono de verdad, no solo en el modo responsive de Chrome.
+- [x] ~~Dar vuelta `src/index.css`~~ ✅ **2026-09-20.** Ya no queda ningún
+      `@media (max-width: …)`: los estilos base son los del celular y hay un
+      solo bloque `@media (min-width: 620px)` con lo que cambia en pantalla
+      grande.
+- [x] ~~44 × 44 px en lo que se toca~~ ✅ El círculo de tachar llega a 44 (se ve
+      de 26: el área grande se logra con padding y `background-clip`, así que
+      no se agranda el dibujo). *Empecé*, los filtros y los íconos de aviso
+      quedaron en 40. En pantalla grande vuelven todos a ser compactos.
+- [x] ~~Formulario al alcance del pulgar~~ ✅ En el celular queda **fijo abajo**,
+      con `env(safe-area-inset-bottom)` para no quedar debajo de la barra de
+      gestos del iPhone. En pantalla grande vuelve arriba, al flujo normal.
+- [ ] **Probar con el teclado del celular abierto**: que no tape el botón
+      *Anotar*. ⚠️ Sin verificar — el teclado no se puede simular desde acá.
+- [ ] **Verificarlo en un teléfono de verdad.** ⚠️ Sin verificar: la ventana del
+      navegador no se dejó achicar (estaba maximizada), así que la comprobación
+      fue leyendo las reglas CSS cargadas, no mirando el render.
 
 > Ojo con no romper nada de lo que ya está decidido al tocar el CSS: el rojo
 > sigue reservado para lo que de verdad se pasó (punto 7c de `AGENTS.md`) y el
