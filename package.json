@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "fb:login": "firebase login",
     "rules": "firebase deploy --only firestore:rules --project todo-list-846e2",
-    "publicar": "vite build && firebase deploy --only hosting --project todo-list-846e2"
+    "publicar": "vite build && firebase deploy --only hosting --project todo-list-846e2",
+    "iconos": "bun run scripts/generar-iconos.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",
