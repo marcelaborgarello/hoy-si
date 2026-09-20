@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Celebration } from './components/Celebration'
+import { Configuracion } from './components/Configuracion'
 import { SignIn } from './components/SignIn'
 import { TaskCard } from './components/TaskCard'
 import { TaskDetail } from './components/TaskDetail'
@@ -64,6 +65,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
   const [filter, setFilter] = useState<Filter>('abiertas')
   const [openId, setOpenId] = useState<string | null>(null)
   const [party, setParty] = useState<string | null>(null)
+  const [verConfig, setVerConfig] = useState(false)
 
   const stats = useMemo(() => computeStats(tasks), [tasks])
 
@@ -123,6 +125,13 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
               <span className="who" title={auth.user.email ?? ''}>
                 {auth.user.displayName ?? auth.user.email}
               </span>
+              <button
+                className="btn ghost sm"
+                onClick={() => setVerConfig(true)}
+                title="Configuración"
+              >
+                ⚙️ Configuración
+              </button>
               <button className="btn ghost sm" onClick={() => void auth.signOut()}>
                 Salir
               </button>
@@ -228,6 +237,10 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
           onAddNote={(task, text) => void addNote(task, text)}
           onRemoveNote={(task, noteId) => void removeNote(task, noteId)}
         />
+      )}
+
+      {verConfig && (
+        <Configuracion uid={auth.user?.uid ?? null} onClose={() => setVerConfig(false)} />
       )}
 
       {party && <Celebration key={party} message={party} onDone={() => setParty(null)} />}

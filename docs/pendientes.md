@@ -43,7 +43,42 @@ la pantalla chica es un parche, ese momento se pierde.
 
 ---
 
-## 2. Convertirla en PWA
+## 2. Modo claro y oscuro (y el predeterminado)
+
+Hoy la app es **solo oscura**. Los tokens de color están todos arriba de
+`src/index.css`, así que medio trabajo ya está hecho: falta **inventar la paleta
+clara**, no reacomodar el archivo.
+
+**Son tres estados, no dos:**
+
+1. **Claro**
+2. **Oscuro**
+3. **El del sistema** ← este es el **predeterminado**. Si nunca elegiste nada, la
+   app usa lo que tenga puesto el teléfono o la compu (se lee con
+   `prefers-color-scheme`). Si elegís a mano, se recuerda tu elección.
+
+O sea que el control tiene tres opciones, no es un interruptor de dos. Y "volver
+al predeterminado" tiene que ser una opción alcanzable, no algo que se consiga
+borrando datos del navegador.
+
+- [ ] Paleta clara.
+- [ ] Control de tres estados + recordar la elección.
+- [ ] Cambiar el `theme-color` de `index.html`, que hoy está clavado en
+      `#0d0f14`. Si no, la barra del navegador queda oscura con la app clara.
+
+> **Cuidado al armar la paleta clara:** no es "aclarar" los colores de ahora. El
+> ámbar de los 7 días y el rojo de lo que se pasó tienen que seguir leyéndose
+> como lo que son sobre fondo blanco, con contraste suficiente. Y sigue firme la
+> regla del punto 7c de `AGENTS.md`: **el rojo es solo para lo que de verdad se
+> pasó**, nunca para meter presión.
+
+> Conviene hacerlo **en la misma pasada que el punto 1**: es el mismo archivo.
+> Pero primero mobile first y después los colores — dos refactors del CSS al
+> mismo tiempo es cómo se rompen las dos cosas.
+
+---
+
+## 3. Convertirla en PWA
 
 **Respuesta corta: sí se puede, y es de las cosas más baratas que quedan por hacer.**
 
@@ -97,7 +132,7 @@ La app ya cumple casi todos los requisitos sin haber hecho nada a propósito:
 
 ---
 
-## 3. Lo que sigue trabado esperando a una persona
+## 4. Lo que sigue trabado esperando a una persona
 
 Viene de `AGENTS.md`, repetido acá porque es lo que frena todo lo demás.
 
@@ -113,7 +148,7 @@ Viene de `AGENTS.md`, repetido acá porque es lo que frena todo lo demás.
 
 ---
 
-## 4. En curso en otra conversación
+## 5. En curso en otra conversación
 
 Los últimos commits (`Webhook del bot de Telegram`, `Redeploy para tomar las
 variables de Telegram`) son más nuevos que lo que cuenta el punto 7h de
@@ -123,7 +158,44 @@ ese punto de `AGENTS.md` cuando cierre.
 
 ---
 
-## 5. Ideas, no pendientes
+## 6. IA con Groq — sin decidir
+
+> **Va después de que anden las alertas de Telegram.** Decisión del 2026-09-20:
+> primero se termina lo que está a medio hacer (punto 5), recién después se
+> abre este frente.
+
+Lo que hay hasta ahora es **las ganas de probar el SDK de Groq, en plan
+gratuito**. Qué tiene que hacer: todavía no se sabe, y no hace falta saberlo hoy.
+Que quede anotado alcanza.
+
+El filtro para cuando aparezca la idea es el de siempre: **si no ayuda a
+arrancar, no va.** Una todo list con IA que resume o clasifica o etiqueta es una
+todo list más pesada, no una que te haga empezar.
+
+Candidatos anotados, ninguno elegido:
+
+- Partir una tarea grande en pasos chicos ("limpiar" son en realidad 6 cosas).
+- Reescribir el título vago en la primera acción concreta, una sola línea.
+- Estimar cuánto va a llevar, para comparar después con lo que tardó de verdad.
+
+Dos cosas que ya están resueltas para cuando llegue el día, sea cual sea la idea:
+
+- **La clave de Groq nunca toca el navegador.** Va en una ruta de `api/`, igual
+  que `api/log.ts` y `api/telegram.ts`. (`AGENTS.md` punto 7e dice "Cloudflare
+  Worker", pero eso se escribió antes de que existiera `api/`: hoy ya hay
+  funciones de servidor en Vercel y son un lugar menos donde buscar.)
+- Si lo que devuelve son **pasos**, entran como **notas** de la tarea. Las notas
+  ya existen y ya están validadas: no habría que tocar el modelo de datos ni
+  volver a desplegar las reglas.
+
+> **Regla de esta lista:** lo que se te ocurra en el medio de otra cosa se anota
+> acá y se sigue con lo que estabas haciendo. Arrancar algo chico y agrandarlo
+> sobre la marcha es la forma más segura de quedarse con dos cosas a medias — que
+> es justo lo que la app viene a combatir, aplicado a la app misma.
+
+---
+
+## 7. Ideas, no pendientes
 
 Están en el punto 9 de `AGENTS.md` (subtareas con Groq, tareas recurrentes, modo
 "5 minutos", historial de la semana). No son deuda: antes de agarrar alguna,

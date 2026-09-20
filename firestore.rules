@@ -15,6 +15,21 @@ service cloud.firestore {
       allow create, update: if isOwner(uid) && esTareaValida();
     }
 
+    // Preferencias de avisos. El chat de Telegram lo escribe el servidor
+    // (que usa la cuenta de servicio y se saltea estas reglas), no el
+    // navegador: desde el cliente solo se puede leer y desconectar.
+    match /users/{uid}/config/{doc} {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && esConfigValida();
+    }
+
+    // Códigos de vinculación de Telegram: los crea el navegador y los
+    // consume el servidor. Nadie puede leer los de otra persona.
+    match /vinculos/{codigo} {
+      allow get, create, delete: if request.auth != null;
+      allow list, update: if false;
+    }
+
     // Todo lo que no esté declarado arriba queda cerrado.
     match /{document=**} {
       allow read, write: if false;
@@ -23,6 +38,15 @@ service cloud.firestore {
 
   function isOwner(uid) {
     return request.auth != null && request.auth.uid == uid;
+  }
+
+  // Desde el navegador solo se puede apagar los avisos o desconectar el chat.
+  // Poner un chat de Telegram es cosa del servidor, que verifica de verdad
+  // que ese chat le escribió al bot.
+  function esConfigValida() {
+    let d = request.resource.data;
+    return d.get('telegramChatId', null) == null
+      && (d.get('avisos', false) is bool);
   }
 
   // Validación de forma en el servidor: que un cliente modificado no pueda
