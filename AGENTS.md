@@ -382,10 +382,32 @@ No están hechas. Si se retoman, revisar primero si sirven al objetivo del punto
   navegador: sesión iniciada y nombre en el header). Se reescribió todo el copy
   para sacar jerga técnica, porque la app se va a compartir (punto 7b).
 
+- **2026-09-19** — Se agregó hora límite (`dueTime`) y se hicieron visibles los
+  campos de fecha/hora, que estaban transparentes e invisibles.
+  **Primer deploy a producción**: push a `main` de
+  `marcelaborgarello/todo-list-2026`, que Vercel publica en
+  **https://tareas.ginialtech.com** (DNS por Cloudflare, en DNS only).
+  Verificado: el sitio carga con HTTPS y las variables `VITE_*` de Vercel
+  llegan bien (se ve la pantalla de login, no el modo local).
+
 ### Bloqueado esperando al humano
 
-**Falta un solo paso**, que necesita la cuenta de Google y no se puede
-automatizar desde acá:
+**1. Autorizar el dominio de producción — BLOQUEANTE.** Sin esto el login con
+Google falla en `tareas.ginialtech.com` aunque el sitio cargue perfecto
+(`auth/unauthorized-domain`):
+
+Firebase Console → Authentication → Settings → **Authorized domains** → Add →
+`tareas.ginialtech.com`
+
+Chequeado el 2026-09-19: la lista tenía solo `localhost`,
+`todo-list-846e2.firebaseapp.com` y `todo-list-846e2.web.app`. Se puede
+verificar sin credenciales, porque la `apiKey` es pública:
+
+```
+https://identitytoolkit.googleapis.com/v1/projects?key=<VITE_FIREBASE_API_KEY>
+```
+
+**2. Reglas con el campo `dueTime`** (no bloqueante, las viejas no lo rechazan):
 
 ```bash
 bun run fb:login   # abre el navegador, hay que entrar con la cuenta de Google

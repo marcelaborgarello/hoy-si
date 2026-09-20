@@ -46,8 +46,11 @@ export function useAuth(): AuthState {
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return // el usuario cerró la ventana: no es un error que mostrar
       }
-      // En desarrollo conviene el detalle; a cualquier otra persona no le sirve.
-      if (import.meta.env.DEV) console.error('[auth]', code, err)
+      // El código va SIEMPRE a la consola (no a la pantalla): sin esto, un
+      // problema de configuración en producción es imposible de diagnosticar.
+      // Ej: auth/unauthorized-domain = falta agregar el dominio en
+      // Firebase Console -> Authentication -> Settings -> Authorized domains.
+      console.error('[auth]', code, err)
       setError(
         code === 'auth/network-request-failed'
           ? 'Parece que no hay internet. Probá de nuevo en un rato.'
