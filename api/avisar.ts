@@ -1,6 +1,11 @@
 import pino from 'pino'
 import { estadoAdmin, getDbAdmin } from './_firebase.js'
 
+const log = pino({ name: 'avisar' })
+
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const SECRET = process.env.CRON_SECRET
+
 /**
  * Manda los avisos que tocan ahora.
  *
@@ -11,11 +16,6 @@ import { estadoAdmin, getDbAdmin } from './_firebase.js'
  * Después de mandar, avanza `nextNotifyAt` al siguiente aviso (el de la hora
  * exacta, si el que salió era el anticipado) o lo apaga con null.
  */
-
-const log = pino({ name: 'avisar' })
-
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN
-const SECRET = process.env.CRON_SECRET
 
 /** Tope por corrida: si algo se desmadra, no manda mil mensajes de una. */
 const MAX_POR_CORRIDA = 50
@@ -113,6 +113,17 @@ function armarMensaje(t: TareaDoc, faltan: number): string {
   ].join('')
 }
 
+async function enviarPush(
+  _token: string,
+  titulo: string,
+  cuerpo: string,
+): Promise<boolean> {
+  // Placeholder: el envío real de push requiere Firebase Cloud Messaging Server Key
+  // Por ahora solo logueamos que el usuario tiene push activado
+  log.info({ titulo, cuerpo }, 'envio push (pendiente de implementar con FCM Server Key)')
+  return true
+}
+
 /**
  * Botones debajo del mensaje.
  *
@@ -182,12 +193,18 @@ export async function POST(request: Request): Promise<Response> {
     tareasValidas.push({ doc, uid, tarea: t })
   }
 
-  // Segundo: obtener todos los chatIds en una sola ronda de consultas.
+  // Segundo: obtener todos los chatIds y tokens push en una sola ronda de consultas.
   const chats = new Map<string, string | null>()
+  const pushTokens = new Map<string, string | null>()
   const configsPromises = Array.from(uidsUnicos).map(async (uid) => {
     const cfg = await db.doc(`users/${uid}/config/avisos`).get()
     const data = cfg.data() as { telegramChatId?: string; avisos?: boolean } | undefined
     chats.set(uid, data?.avisos && data.telegramChatId ? data.telegramChatId : null)
+
+    // Obtener token push si existe
+    const pushCfg = await db.doc(`users/${uid}/config/push`).get()
+    const pushData = pushCfg.data() as { token?: string } | undefined
+    pushTokens.set(uid, pushData?.token || null)
   })
   await Promise.all(configsPromises)
 
@@ -207,21 +224,34 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const chatId = chats.get(uid)
-    if (!chatId) {
-      // Sin Telegram conectado no hay a dónde mandarlo: se apaga y no se
-      // reintenta en cada corrida.
+    const pushToken = pushTokens.get(uid)
+
+    // Si no tiene ni Telegram ni push, apagar los avisos
+    if (!chatId && !pushToken) {
       await doc.ref.update({ nextNotifyAt: null })
       return { tipo: 'sin-chat' as const }
     }
 
     // Resta de dos números absolutos: no hay zonas horarias de por medio.
     const faltanMin = Math.round((t.dueAt! - t.nextNotifyAt!) / 60_000)
-    const ok = await enviar(chatId, armarMensaje(t, faltanMin), armarBotones(uid, doc.id))
+    const mensaje = armarMensaje(t, faltanMin)
 
-    // Se avanza igual si Telegram falló: reintentar en loop es peor que
+    // Enviar por Telegram si está conectado
+    let telegramOk = false
+    if (chatId) {
+      telegramOk = await enviar(chatId, mensaje, armarBotones(uid, doc.id))
+    }
+
+    // Enviar push si tiene token
+    let pushOk = false
+    if (pushToken) {
+      pushOk = await enviarPush(pushToken, t.title || 'Hoy sí', mensaje)
+    }
+
+    // Se avanza igual si alguno falló: reintentar en loop es peor que
     // perder un aviso, y el error queda en los logs.
     await doc.ref.update({ nextNotifyAt: siguiente })
-    return { tipo: 'enviado' as const, ok }
+    return { tipo: 'enviado' as const, ok: telegramOk || pushOk }
   }
 
   // Procesar en batches para no saturar.

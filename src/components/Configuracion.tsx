@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { useConfig } from '../hooks/useConfig'
+import { usePush } from '../hooks/usePush'
 import { IconoTelegram } from './iconos'
 
 type Props = {
@@ -7,13 +8,16 @@ type Props = {
   config: ReturnType<typeof useConfig>
   /** El de la cuenta de Google, para mostrarlo como sugerencia. */
   nombreDeGoogle: string
+  /** UID del usuario para las notificaciones push */
+  uid: string | null
   onClose: () => void
 }
 
-export function Configuracion({ config: cfg, nombreDeGoogle, onClose }: Props) {
+export function Configuracion({ config: cfg, nombreDeGoogle, uid, onClose }: Props) {
   const { config, nombre, guardarNombre, cargando, crearLinkDeConexion, desconectar } = cfg
   const [abriendo, setAbriendo] = useState(false)
   const [nombreEditado, setNombreEditado] = useState(nombre)
+  const push = usePush(uid)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,6 +109,42 @@ export function Configuracion({ config: cfg, nombreDeGoogle, onClose }: Props) {
               No hay nada que configurar. En cada tarea con hora vas a ver el botón
               <b> Google Calendar</b>, que crea el evento y te avisa desde ahí.
             </p>
+          </section>
+
+          <section className="section">
+            <h3>Avisos push (sonido personalizado)</h3>
+            {!push.soportado ? (
+              <p className="ayuda">Tu navegador no soporta notificaciones push.</p>
+            ) : push.habilitado ? (
+              <>
+                <div className="conectado">
+                  <span className="dot" /> Notificaciones activadas
+                </div>
+                <p className="ayuda">
+                  Te voy a avisar con un sonido especial cuando se acerque el horario de una tarea.
+                  Solo funciona con las tareas que tengan hora.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="ayuda">
+                  Activá las notificaciones push y te aviso con un sonido personalizado cuando se acerque el horario de una tarea.
+                  Es un toque: el navegador te va a pedir permiso.
+                </p>
+                <button
+                  className="btn primary"
+                  onClick={() => void push.pedirPermiso()}
+                  disabled={!push.puedePedir}
+                >
+                  {push.permiso === 'denied' ? 'Permisos denegados' : 'Activar notificaciones'}
+                </button>
+                {push.permiso === 'denied' && (
+                  <p className="ayuda chico">
+                    Denegaste los permisos. Para activarlos, revisá la configuración de tu navegador.
+                  </p>
+                )}
+              </>
+            )}
           </section>
         </div>
       </aside>

@@ -31,6 +31,12 @@ service cloud.firestore {
       allow write: if isOwner(uid) && esPerfilValido();
     }
 
+    // Token de notificaciones push. Lo escribe el navegador, el servidor solo lee.
+    match /users/{uid}/config/push {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && esPushValida();
+    }
+
     // Cualquier otro documento de configuración queda cerrado.
     match /users/{uid}/config/{doc} {
       allow read, write: if false;
@@ -67,6 +73,13 @@ service cloud.firestore {
     let d = request.resource.data;
     return d.get('nombre', '') is string
       && d.get('nombre', '').size() <= 60;
+  }
+
+  // Token de notificaciones push: solo validar que sea un string razonable.
+  function esPushValida() {
+    let d = request.resource.data;
+    return d.get('token', '') is string
+      && d.get('token', '').size() <= 2000; // Los tokens suelen ser largos
   }
 
   // Validación de forma en el servidor: que un cliente modificado no pueda

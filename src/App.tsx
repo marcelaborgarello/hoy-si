@@ -251,6 +251,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
         <Configuracion
           config={configAvisos}
           nombreDeGoogle={auth.user?.displayName ?? auth.user?.email ?? ''}
+          uid={auth.user?.uid ?? null}
           onClose={() => setVerConfig(false)}
         />
       )}
