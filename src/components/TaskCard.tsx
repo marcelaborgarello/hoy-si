@@ -1,11 +1,13 @@
 import type { Task } from '../types/task'
 import { daysSince, dueMoment, formatDueDate, formatDuration, dueStatus } from '../lib/time'
+import { AvisosMini } from './AvisosMini'
 
 type Props = {
   task: Task
   onToggle: (task: Task) => void
   onStart: (task: Task) => void
   onOpen: (task: Task) => void
+  telegramConectado: boolean
 }
 
 /** Etiquetas de contexto: cuánto la venís pateando, si vence, cuánto tardó. */
@@ -45,7 +47,7 @@ function metaPills(task: Task) {
   return pills
 }
 
-export function TaskCard({ task, onToggle, onStart, onOpen }: Props) {
+export function TaskCard({ task, onToggle, onStart, onOpen, telegramConectado }: Props) {
   const vencida =
     task.dueDate !== null &&
     task.status !== 'done' &&
@@ -93,6 +95,12 @@ export function TaskCard({ task, onToggle, onStart, onOpen }: Props) {
       </div>
 
       <div className="card-actions">
+        {/* Los avisos se ven acá, en la tarjeta: no hay que abrir el detalle
+            para saber si esta tarea te va a avisar o no. */}
+        {task.status !== 'done' && (
+          <AvisosMini task={task} telegramConectado={telegramConectado} />
+        )}
+
         {task.status === 'todo' && (
           <button className="btn sm" onClick={() => onStart(task)}>
             Empecé

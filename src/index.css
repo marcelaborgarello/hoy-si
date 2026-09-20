@@ -863,6 +863,34 @@ button {
   background: var(--accent);
 }
 
+/* ---------- Avisos dentro de la tarjeta ---------- */
+.avisos-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.mini {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  transition: background 0.14s ease;
+}
+
+a.mini:hover {
+  background: var(--surface-hi);
+}
+
+/* Apagado, no escondido: se ve que la opción existe y el tooltip dice qué falta. */
+.mini.off {
+  opacity: 0.3;
+  filter: grayscale(1);
+  cursor: default;
+}
+
 /* ---------- Alertas ---------- */
 .alertas {
   display: flex;

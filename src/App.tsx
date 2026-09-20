@@ -219,6 +219,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
                   onToggle={(t) => void toggle(t)}
                   onStart={(task) => void start(task)}
                   onOpen={(task) => setOpenId(task.id)}
+                  telegramConectado={telegramConectado}
                 />
               ))}
             </div>
