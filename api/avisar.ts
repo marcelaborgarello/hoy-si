@@ -162,10 +162,9 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ revisadas: 0, enviados: 0 })
   }
 
-  // El chat de cada persona se busca una sola vez aunque tenga varias tareas.
-  const chats = new Map<string, string | null>()
-  let enviados = 0
-  let vencidos = 0
+  // Primero: colectar todos los uids únicos y pre-filtrar tareas inválidas.
+  const uidsUnicos = new Set<string>()
+  const tareasValidas: Array<{ doc: FirebaseFirestore.QueryDocumentSnapshot; uid: string; tarea: TareaDoc }> = []
 
   for (const doc of pendientes.docs) {
     const uid = doc.ref.parent.parent?.id
@@ -179,21 +178,32 @@ export async function POST(request: Request): Promise<Response> {
       continue
     }
 
-    // Lo que corresponda a partir de ahora, sin importar lo que se mandó.
-    const siguiente = proximoAviso(t, t.nextNotifyAt)
-    const atrasoMin = (ahora - t.nextNotifyAt) / 60_000
+    uidsUnicos.add(uid)
+    tareasValidas.push({ doc, uid, tarea: t })
+  }
+
+  // Segundo: obtener todos los chatIds en una sola ronda de consultas.
+  const chats = new Map<string, string | null>()
+  const configsPromises = Array.from(uidsUnicos).map(async (uid) => {
+    const cfg = await db.doc(`users/${uid}/config/avisos`).get()
+    const data = cfg.data() as { telegramChatId?: string; avisos?: boolean } | undefined
+    chats.set(uid, data?.avisos && data.telegramChatId ? data.telegramChatId : null)
+  })
+  await Promise.all(configsPromises)
+
+  // Tercero: procesar las tareas en paralelo con límite de concurrencia.
+  let enviados = 0
+  let vencidos = 0
+  const CONCURRENCIA_MAX = 5 // No saturar ni Telegram ni Firestore
+
+  async function procesarTarea({ doc, uid, tarea: t }: typeof tareasValidas[0]) {
+    const siguiente = proximoAviso(t, t.nextNotifyAt!)
+    const atrasoMin = (ahora - t.nextNotifyAt!) / 60_000
 
     if (atrasoMin > TOLERANCIA_MIN) {
       // Demasiado viejo: se saltea sin mandar, pero se ordena el próximo.
       await doc.ref.update({ nextNotifyAt: siguiente })
-      vencidos++
-      continue
-    }
-
-    if (!chats.has(uid)) {
-      const cfg = await db.doc(`users/${uid}/config/avisos`).get()
-      const data = cfg.data() as { telegramChatId?: string; avisos?: boolean } | undefined
-      chats.set(uid, data?.avisos && data.telegramChatId ? data.telegramChatId : null)
+      return { tipo: 'vencido' as const }
     }
 
     const chatId = chats.get(uid)
@@ -201,17 +211,27 @@ export async function POST(request: Request): Promise<Response> {
       // Sin Telegram conectado no hay a dónde mandarlo: se apaga y no se
       // reintenta en cada corrida.
       await doc.ref.update({ nextNotifyAt: null })
-      continue
+      return { tipo: 'sin-chat' as const }
     }
 
     // Resta de dos números absolutos: no hay zonas horarias de por medio.
-    const faltanMin = Math.round((t.dueAt - t.nextNotifyAt) / 60_000)
+    const faltanMin = Math.round((t.dueAt! - t.nextNotifyAt!) / 60_000)
     const ok = await enviar(chatId, armarMensaje(t, faltanMin), armarBotones(uid, doc.id))
 
     // Se avanza igual si Telegram falló: reintentar en loop es peor que
     // perder un aviso, y el error queda en los logs.
     await doc.ref.update({ nextNotifyAt: siguiente })
-    if (ok) enviados++
+    return { tipo: 'enviado' as const, ok }
+  }
+
+  // Procesar en batches para no saturar.
+  for (let i = 0; i < tareasValidas.length; i += CONCURRENCIA_MAX) {
+    const batch = tareasValidas.slice(i, i + CONCURRENCIA_MAX)
+    const resultados = await Promise.all(batch.map(procesarTarea))
+    for (const r of resultados) {
+      if (r.tipo === 'vencido') vencidos++
+      if (r.tipo === 'enviado' && r.ok) enviados++
+    }
   }
 
   log.info({ revisadas: pendientes.size, enviados, vencidos }, 'corrida de avisos')
