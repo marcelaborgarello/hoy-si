@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { NewTask } from '../types/task'
+import { todayKey } from '../lib/time'
 
 type Props = {
   /** Devuelve false si no se pudo guardar: ahí no borramos lo escrito. */
@@ -80,19 +81,19 @@ export function TaskForm({ onAdd }: Props) {
               onChange={(e) => setDueDate(e.target.value)}
               aria-label="Fecha límite"
             />
-            {/* La hora solo tiene sentido si ya hay un día elegido. */}
-            {dueDate && (
-              <>
-                a las
-                <input
-                  type="time"
-                  className={`dt${dueTime ? '' : ' vacio'}`}
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  aria-label="Hora límite"
-                />
-              </>
-            )}
+            a las
+            <input
+              type="time"
+              className={`dt${dueTime ? '' : ' vacio'}`}
+              value={dueTime}
+              onChange={(e) => {
+                setDueTime(e.target.value)
+                // Poner hora sin día es lo más natural del mundo ("a las 9").
+                // Se asume hoy en vez de obligarte a elegir la fecha primero.
+                if (e.target.value && !dueDate) setDueDate(todayKey())
+              }}
+              aria-label="Hora límite"
+            />
             <button
               type="button"
               className="btn ghost sm"
@@ -108,7 +109,7 @@ export function TaskForm({ onAdd }: Props) {
           </label>
         ) : (
           <button type="button" className="btn ghost sm" onClick={() => setShowDate(true)}>
-            📅 Ponerle fecha
+            📅 Ponerle fecha y hora
           </button>
         )}
         <button className="btn primary" type="submit" disabled={!canSubmit || saving}>

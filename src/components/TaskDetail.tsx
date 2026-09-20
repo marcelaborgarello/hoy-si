@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '../types/task'
-import { daysSince, formatDateTime, formatDueDate, formatDuration } from '../lib/time'
+import { daysSince, formatDateTime, formatDueDate, formatDuration, todayKey } from '../lib/time'
 
 type Props = {
   task: Task
@@ -141,26 +141,31 @@ export function TaskDetail({
                   />
                 </span>
               </div>
-              {/* Fila propia: pegada a la fecha no se veía que existía. */}
-              {task.dueDate && (
-                <div className="tl-row">
-                  <span className="k">A qué hora</span>
-                  <span className="v">
-                    <input
-                      type="time"
-                      className={`dt${task.dueTime ? '' : ' vacio'}`}
-                      value={task.dueTime ?? ''}
-                      onChange={(e) => onEdit(task.id, { dueTime: e.target.value || null })}
-                      aria-label="Hora límite"
-                    />
-                    {!task.dueTime && (
-                      <span style={{ color: 'var(--text-faint)', fontSize: 12, marginLeft: 8 }}>
-                        sin hora = todo el día
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )}
+              {/* Fila propia y SIEMPRE visible: escondida detrás de la fecha,
+                  no había forma de descubrir que se podía poner hora. */}
+              <div className="tl-row">
+                <span className="k">A qué hora</span>
+                <span className="v">
+                  {!task.dueTime && (
+                    <span style={{ color: 'var(--text-faint)', fontSize: 12, marginRight: 8 }}>
+                      sin hora = todo el día
+                    </span>
+                  )}
+                  <input
+                    type="time"
+                    className={`dt${task.dueTime ? '' : ' vacio'}`}
+                    value={task.dueTime ?? ''}
+                    onChange={(e) =>
+                      onEdit(task.id, {
+                        dueTime: e.target.value || null,
+                        // Poner hora sin día asume hoy.
+                        ...(e.target.value && !task.dueDate ? { dueDate: todayKey() } : {}),
+                      })
+                    }
+                    aria-label="Hora límite"
+                  />
+                </span>
+              </div>
               {task.startedAt && task.finishedAt && (
                 <div className="tl-row total">
                   <span className="k">Tiempo real</span>
