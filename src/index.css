@@ -501,6 +501,42 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Agenda: bloques por día ---------- */
+.dia {
+  margin-bottom: 26px;
+}
+
+.dia-titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dia-sub {
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.dia-cuenta {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.dia-titulo.es-tarde {
+  color: var(--late);
+  border-bottom-color: #4a301c;
+}
+
 /* ---------- Lista ---------- */
 .list {
   display: grid;
@@ -783,6 +819,75 @@ button {
 .tl-row.total .v {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* ---------- Alertas ---------- */
+.alertas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn.alerta {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/**
+ * "Apagado" en vez de invisible: se ve que la opción existe y por qué no se
+ * puede usar todavía. Un botón que desaparece no enseña nada.
+ */
+.btn.alerta.off {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.btn.alerta.off:hover {
+  background: var(--surface-hi);
+  border-color: var(--border);
+}
+
+/**
+ * Tooltip propio: `title` tarda un segundo largo en aparecer, y sobre un
+ * botón disabled muchos navegadores ni disparan el hover. Por eso el
+ * data-tip puede ir en el contenedor.
+ */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  background: #0a0c11;
+  color: var(--text);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  width: max-content;
+  max-width: 260px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
+  opacity: 0;
+  transform: translateY(3px);
+  pointer-events: none;
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-within::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .notes {

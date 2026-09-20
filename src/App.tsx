@@ -6,6 +6,7 @@ import { TaskDetail } from './components/TaskDetail'
 import { TaskForm } from './components/TaskForm'
 import { useAuth } from './hooks/useAuth'
 import { useTasks } from './hooks/useTasks'
+import { agrupar } from './lib/agenda'
 import { celebrationMessage, computeStats, nudge } from './lib/motivation'
 import type { Status, Task } from './types/task'
 
@@ -25,8 +26,6 @@ function matches(task: Task, filter: Filter): boolean {
   return task.status === (filter as Status)
 }
 
-/** Primero lo que está en curso, después pendientes (más viejas arriba), al final lo hecho. */
-const ORDEN: Record<Status, number> = { doing: 0, todo: 1, done: 2 }
 
 export default function App() {
   const auth = useAuth()
@@ -68,18 +67,13 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
 
   const stats = useMemo(() => computeStats(tasks), [tasks])
 
-  const visibles = useMemo(
-    () =>
-      tasks
-        .filter((t) => matches(t, filter))
-        .sort((a, b) => {
-          const d = ORDEN[a.status] - ORDEN[b.status]
-          if (d !== 0) return d
-          if (a.status === 'done') return (b.finishedAt ?? 0) - (a.finishedAt ?? 0)
-          return a.createdAt - b.createdAt
-        }),
+  // La lista se muestra como agenda: bloques por día, en orden cronológico.
+  const grupos = useMemo(
+    () => agrupar(tasks.filter((t) => matches(t, filter))),
     [tasks, filter],
   )
+
+  const hayAlgo = grupos.length > 0
 
   const abierta = openId ? (tasks.find((t) => t.id === openId) ?? null) : null
 
@@ -183,7 +177,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
 
       {loading ? (
         <div className="empty">Cargando…</div>
-      ) : visibles.length === 0 ? (
+      ) : !hayAlgo ? (
         <div className="empty">
           <div className="big">{filter === 'done' ? '🫥' : '🌵'}</div>
           {filter === 'done'
@@ -193,17 +187,26 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
               : 'Nada en este filtro. Buena señal.'}
         </div>
       ) : (
-        <div className="list">
-          {visibles.map((t) => (
-            <TaskCard
-              key={t.id}
-              task={t}
-              onToggle={(t) => void toggle(t)}
-              onStart={(task) => void start(task)}
-              onOpen={(task) => setOpenId(task.id)}
-            />
-          ))}
-        </div>
+        grupos.map((g) => (
+          <section className="dia" key={g.key}>
+            <h2 className={`dia-titulo${g.key === 'atrasadas' ? ' es-tarde' : ''}`}>
+              <span>{g.titulo}</span>
+              {g.sub && <span className="dia-sub">{g.sub}</span>}
+              <span className="dia-cuenta">{g.tasks.length}</span>
+            </h2>
+            <div className="list">
+              {g.tasks.map((t) => (
+                <TaskCard
+                  key={t.id}
+                  task={t}
+                  onToggle={(t) => void toggle(t)}
+                  onStart={(task) => void start(task)}
+                  onOpen={(task) => setOpenId(task.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ))
       )}
 
       {abierta && (
