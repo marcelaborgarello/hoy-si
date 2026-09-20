@@ -37,6 +37,19 @@ body,
   height: 100%;
 }
 
+/**
+ * Red de seguridad: si algo se pasa de ancho, que no arrastre a toda la
+ * página. Sin esto, un solo elemento desbordado corre el contenido a la
+ * izquierda y deja un margen muerto a la derecha en el celular.
+ *
+ * No reemplaza arreglar la causa — la tapa para que no se note tarde.
+ */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   background:
@@ -833,10 +846,21 @@ button {
   border-color: #23452f;
 }
 
+/**
+ * En el celular los botones van en su PROPIA FILA, alineados bajo el texto.
+ *
+ * Sin el `grid-column: 2` caen en la primera columna —la del círculo, que es
+ * angosta— y la estiran hasta desbordar la pantalla: la página queda más ancha
+ * que el celular y todo se corre a la izquierda, con un margen muerto a la
+ * derecha.
+ */
 .card-actions {
   display: flex;
   gap: 4px;
   align-items: center;
+  grid-column: 2;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .empty {
@@ -1422,6 +1446,11 @@ button.mini:not(:disabled):hover {
     grid-template-columns: auto 1fr auto;
     gap: 14px;
     padding: 14px 16px;
+  }
+
+  .card-actions {
+    grid-column: auto;
+    flex-wrap: nowrap;
   }
 
   /* El formulario deja de estar fijo abajo y vuelve al flujo de la página. */
