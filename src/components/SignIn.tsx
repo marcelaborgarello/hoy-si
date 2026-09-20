@@ -7,7 +7,7 @@ export function SignIn({ onSignIn, error }: Props) {
   return (
     <div className="signin">
       <div className="signin-card">
-        <div className="signin-emoji">✦</div>
+        <img className="signin-logo" src="/logo.svg" alt="" width="72" height="72" />
         <h1>Hoy sí</h1>
         <p className="sub">
           Anotá eso que venís pateando, apretá <strong>Empecé</strong>, y cuando lo tachás

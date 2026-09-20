@@ -90,6 +90,14 @@ button {
   font-size: 28px;
   letter-spacing: -0.03em;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.brand h1 img {
+  display: block;
+  flex-shrink: 0;
 }
 
 .brand .sub {
@@ -166,10 +174,9 @@ button {
   box-shadow: var(--shadow);
 }
 
-.signin-emoji {
-  font-size: 46px;
-  line-height: 1;
-  margin-bottom: 14px;
+.signin-logo {
+  display: block;
+  margin: 0 auto 14px;
 }
 
 .signin-card h1 {

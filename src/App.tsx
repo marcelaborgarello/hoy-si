@@ -106,7 +106,10 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <h1>Hoy sí</h1>
+          <h1>
+            <img src="/logo.svg" alt="" width="30" height="30" />
+            Hoy sí
+          </h1>
           <p className="sub">Anotala, arrancá, tachala. Una cosa por vez.</p>
         </div>
         <div className="account">
