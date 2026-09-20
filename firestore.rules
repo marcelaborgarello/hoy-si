@@ -27,20 +27,26 @@ service cloud.firestore {
 
   // Validación de forma en el servidor: que un cliente modificado no pueda
   // escribir basura ni documentos gigantes en la base.
+  //
+  // ⚠️ SIEMPRE usar d.get('campo', default) para todo lo que no sea
+  // obligatorio desde el día uno. Leer un campo que no existe en el documento
+  // hace fallar la regla ENTERA y Firestore rechaza la escritura.
+  // Esto ya rompió una vez: al agregar dueTime, las tareas viejas que no lo
+  // tenían dejaron de poder tacharse.
   function esTareaValida() {
     let d = request.resource.data;
     return d.title is string
       && d.title.size() > 0
       && d.title.size() <= 200
-      && d.description is string
-      && d.description.size() <= 5000
+      && d.get('description', '') is string
+      && d.get('description', '').size() <= 5000
       && d.status in ['todo', 'doing', 'done']
       && d.createdAt is number
-      && (d.startedAt == null || d.startedAt is number)
-      && (d.finishedAt == null || d.finishedAt is number)
-      && (d.dueDate == null || d.dueDate is string)
-      && (d.dueTime == null || d.dueTime is string)
-      && d.notes is list
-      && d.notes.size() <= 200;
+      && (d.get('startedAt', null) == null || d.get('startedAt', null) is number)
+      && (d.get('finishedAt', null) == null || d.get('finishedAt', null) is number)
+      && (d.get('dueDate', null) == null || d.get('dueDate', null) is string)
+      && (d.get('dueTime', null) == null || d.get('dueTime', null) is string)
+      && d.get('notes', []) is list
+      && d.get('notes', []).size() <= 200;
   }
 }

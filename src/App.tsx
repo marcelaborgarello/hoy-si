@@ -95,13 +95,17 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
     setParty(celebrationMessage(task))
   }
 
-  function toggle(task: Task) {
+  /**
+   * Festejar solo si la tarea se guardó de verdad. Antes felicitaba al toque
+   * y, si el guardado fallaba, la tarea reaparecía sin tachar: te aplaudía
+   * por algo que no había pasado.
+   */
+  async function toggle(task: Task) {
     if (task.status === 'done') {
-      void reopen(task)
-    } else {
-      void finish(task)
-      celebrar(task)
+      await reopen(task)
+      return
     }
+    if (await finish(task)) celebrar(task)
   }
 
   return (
@@ -194,7 +198,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
             <TaskCard
               key={t.id}
               task={t}
-              onToggle={toggle}
+              onToggle={(t) => void toggle(t)}
               onStart={(task) => void start(task)}
               onOpen={(task) => setOpenId(task.id)}
             />
@@ -209,8 +213,9 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
           onEdit={(id, patch) => void edit(id, patch)}
           onStart={(task) => void start(task)}
           onFinish={(task) => {
-            void finish(task)
-            celebrar(task)
+            void finish(task).then((ok) => {
+              if (ok) celebrar(task)
+            })
           }}
           onReset={(task) => void reset(task)}
           onRemove={(id) => void remove(id)}
