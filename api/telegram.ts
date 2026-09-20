@@ -188,6 +188,10 @@ export async function GET(request: Request): Promise<Response> {
   if (accion === 'estado') {
     if (!TOKEN) return Response.json({ error: 'falta el token' }, { status: 500 })
     const r = await fetch(`https://api.telegram.org/bot${TOKEN}/getWebhookInfo`)
+    if (!r.ok) {
+      log.error({ status: r.status }, 'Telegram rechazo getWebhookInfo')
+      return Response.json({ error: 'fallo al obtener estado' }, { status: 502 })
+    }
     return Response.json(await r.json())
   }
 

@@ -34,6 +34,11 @@ async function tocarTimbre(env) {
       headers: { 'x-cron-secret': env.CRON_SECRET },
     })
 
+    if (!r.ok) {
+      console.log(`La app rechazo la llamada: ${r.status}`)
+      return `error: app rechazo ${r.status}`
+    }
+
     const texto = await r.text()
     // Queda en los logs del Worker: sirve para ver si la app contesta bien.
     console.log(`${r.status} ${texto}`)
