@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '../types/task'
+import { linkGoogleCalendar, puedeTenerAlerta } from '../lib/alertas'
 import { daysSince, formatDateTime, formatDueDate, formatDuration, todayKey } from '../lib/time'
 
 type Props = {
@@ -46,6 +47,9 @@ export function TaskDetail({
     panelRef.current?.focus()
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  const linkCalendar = linkGoogleCalendar(task)
+  const sinHora = !puedeTenerAlerta(task)
 
   const saveTitle = () => {
     const clean = title.trim()
@@ -178,6 +182,40 @@ export function TaskDetail({
                 Era para el {formatDueDate(task.dueDate)}.
               </p>
             )}
+          </section>
+
+          <section className="section">
+            <h3>Avisame</h3>
+            {/* Sin hora no hay alerta posible, y hay que explicar por qué en vez
+                de mostrar un botón que no hace nada. */}
+            <div
+              className="alertas"
+              data-tip={
+                sinHora ? 'Para que te avise, primero ponele una hora acá arriba' : undefined
+              }
+            >
+              <a
+                className={`btn alerta${sinHora ? ' off' : ''}`}
+                href={linkCalendar ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-disabled={sinHora}
+                onClick={(e) => {
+                  if (sinHora) e.preventDefault()
+                }}
+              >
+                📅 Google Calendar
+              </a>
+
+              <button
+                className="btn alerta off"
+                type="button"
+                disabled
+                data-tip="Todavía no está conectado Telegram"
+              >
+                ✈️ Telegram
+              </button>
+            </div>
           </section>
 
           <section className="section">

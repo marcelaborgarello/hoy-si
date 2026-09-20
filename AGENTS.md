@@ -404,6 +404,67 @@ Cuidados que ya están resueltos y conviene no romper:
 - Solo viaja texto acotado, nunca objetos completos — para no mandar sin querer
   el contenido de las tareas de la persona a los logs.
 
+## 7g. La lista es una agenda
+
+Pedido: *"puse una para el lunes y está en la misma lista. Me gustaría que se
+separen. Así puedo hacer tipo agenda"*.
+
+`src/lib/agenda.ts` agrupa las tareas en bloques con encabezado de día. El
+orden de los bloques es fijo para que la pantalla no se reacomode sola:
+
+1. **En curso** — siempre arriba. Es lo que estás haciendo ahora, y sostiene el
+   "una cosa por vez" del punto 1.
+2. **Se pasaron** — lo vencido, en ámbar.
+3. **Hoy** · 4. **Mañana** · 5. los días siguientes, en orden cronológico
+   (posición = `FUTURO + días que faltan`).
+6. **Sin fecha** — al final, para que no compita con lo que sí está agendado.
+7. **Terminadas** — último, y agrupadas por el día en que se tacharon.
+
+Dentro de cada día: **primero lo que tiene hora**, en orden; lo demás va al
+final, por antigüedad. Una agenda se lee por hora.
+
+Detalle de zona horaria que ya mordió: las tareas puestas "para mañana" después
+de medianoche aparecen en **Hoy**, porque el día cambió. Es correcto, y el
+usuario lo confirmó. `dueMoment()` usa el fin del día cuando no hay hora, así
+que nada se marca vencido antes de tiempo.
+
+## 7h. Alertas
+
+Sección **"Avisame"** en el panel de detalle. Regla: **sin hora no hay alerta**
+(`puedeTenerAlerta()` exige `dueDate` **y** `dueTime`).
+
+Cuando no se puede, el control **se muestra apagado, no se esconde**, con un
+tooltip que explica por qué: *"Para que te avise, primero ponele una hora acá
+arriba"*. Un botón que desaparece no enseña nada; uno gris con explicación sí.
+
+> Detalle técnico del tooltip: `title` tarda demasiado en aparecer y sobre un
+> botón `disabled` muchos navegadores ni disparan el hover. Por eso hay un
+> tooltip propio con `[data-tip]` en CSS, **puesto en el contenedor** para que
+> funcione igual con los controles deshabilitados.
+
+**Las dos alertas no cuestan lo mismo**, y por eso una está y la otra no:
+
+| | Cómo | Estado |
+|---|---|---|
+| **Google Calendar** | Link `calendar.google.com/render?action=TEMPLATE` con el evento prellenado. **Sin API, sin OAuth, sin backend**: Calendar maneja el recordatorio. | ✅ andando |
+| **Telegram** | Necesita que algo despierte a la hora justa y escriba: servidor con tarea programada. | ⏳ apagado |
+
+Se descartó la **API de Google Calendar**: el scope `calendar.events` es
+sensible y obliga a pasar por la verificación de Google (semanas de trámite).
+El link resuelve lo mismo para este caso.
+
+### Lo que falta para Telegram
+
+1. Bot con **@BotFather** → token (secreto, va solo en el Worker).
+2. Vincular la cuenta: el bot necesita el `chat_id` de cada persona. Patrón
+   habitual: deep link `t.me/<bot>?start=<código>` y el Worker asocia ese
+   código con el `uid`.
+3. **Cloudflare Worker con Cron Trigger** que cada pocos minutos busque tareas
+   próximas a vencer y mande el mensaje.
+4. El Worker tiene que leer Firestore → cuenta de servicio como secreto de
+   Wrangler. **Nunca en el cliente** (punto 7e).
+5. Marcar la tarea como "ya avisada" para no mandar el mismo aviso en loop.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés
