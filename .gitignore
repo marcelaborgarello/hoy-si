@@ -21,6 +21,10 @@ dist-ssr
 *firebase-adminsdk*.json
 .firebase/
 
+# Clave privada VAPID para Web Push - solo en Vercel, no en repo
+# La clave pública sí va en .env con VITE_VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

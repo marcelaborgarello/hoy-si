@@ -1,10 +1,24 @@
 import pino from 'pino'
+import webpush from 'web-push'
 import { estadoAdmin, getDbAdmin } from './_firebase.js'
 
 const log = pino({ name: 'avisar' })
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const SECRET = process.env.CRON_SECRET
+
+// Configurar Web Push con claves VAPID generadas
+// La clave privada viene de Vercel para no exponerla en el código
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+if (!vapidPrivateKey) {
+  log.error('falta VAPID_PRIVATE_KEY en Vercel')
+} else {
+  webpush.setVapidDetails(
+    'mailto:ginialtech@gmail.com',
+    'BN49kfeQnyY9aTOQdk3O9ZLPIDMYCEu71OlyxWMaHeK4eNtYHo4n0YDVXsy9HCwt5nMKTjY14mz7li_ePQ58bb8',
+    vapidPrivateKey,
+  )
+}
 
 /**
  * Manda los avisos que tocan ahora.
@@ -114,14 +128,34 @@ function armarMensaje(t: TareaDoc, faltan: number): string {
 }
 
 async function enviarPush(
-  _token: string,
+  token: string,
   titulo: string,
   cuerpo: string,
 ): Promise<boolean> {
-  // Placeholder: el envío real de push requiere Firebase Cloud Messaging Server Key
-  // Por ahora solo logueamos que el usuario tiene push activado
-  log.info({ titulo, cuerpo }, 'envio push (pendiente de implementar con FCM Server Key)')
-  return true
+  if (!vapidPrivateKey) {
+    log.warn('notificacion push no enviada: falta VAPID_PRIVATE_KEY en Vercel')
+    return false
+  }
+
+  try {
+    const subscription = JSON.parse(token) as webpush.PushSubscription
+
+    const payload = JSON.stringify({
+      title: titulo,
+      body: cuerpo,
+      icon: '/iconos/icono-192.png',
+      sound: '/sounds/notificacion.mp3',
+      vibrate: [200, 100, 200],
+      url: 'https://tareas.ginialtech.com',
+    })
+
+    await webpush.sendNotification(subscription, payload)
+    log.info({ titulo }, 'notificacion push enviada')
+    return true
+  } catch (err) {
+    log.error({ err }, 'error al enviar notificacion push')
+    return false
+  }
 }
 
 /**
