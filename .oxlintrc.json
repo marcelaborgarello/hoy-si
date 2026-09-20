@@ -8,7 +8,6 @@
   },
   "overrides": [
     {
-      "//": "logger.ts es el único que puede usar console en el cliente; api/ escribe con pino; worker/ corre en Cloudflare, donde console.log ES el logger y no hay pino.",
       "files": ["src/lib/logger.ts", "api/**", "worker/**"],
       "rules": {
         "no-console": "off"

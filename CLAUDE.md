@@ -89,7 +89,11 @@ se dice que se está probando en producción. Lo demás se prueba en local.
   "Firestore", "uid" ni un comando de terminal. El detalle técnico va por
   consola o envuelto en `import.meta.env.DEV`. Ver punto 7b de `AGENTS.md`.
 - **Nunca `console.*`**: se usa `log` de `src/lib/logger.ts`. Hay una regla
-  `no-console` en oxlint que lo hace fallar.
+  `no-console` en oxlint que lo hace fallar. Está exceptuada en tres lugares y
+  por un motivo cada uno: `logger.ts` **es** el logger, `api/` escribe con pino,
+  y `worker/` corre en Cloudflare, donde `console.log` es la única forma de
+  dejar registro y no existe pino. (`.oxlintrc.json` no admite comentarios: por
+  eso el motivo está acá.)
 - **En `api/` los imports relativos llevan `.js`**, aunque el archivo sea `.ts`.
   Es ESM y Node no resuelve sin extensión.
 - **El rojo es solo para lo que de verdad se pasó.** Una lista que te reta
