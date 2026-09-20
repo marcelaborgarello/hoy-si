@@ -15,9 +15,6 @@ export function Configuracion({ config: cfg, nombreDeGoogle, onClose }: Props) {
   const [abriendo, setAbriendo] = useState(false)
   const [nombreEditado, setNombreEditado] = useState(nombre)
 
-  // Si el nombre llega de Firestore después de abrir el panel, se refleja.
-  useEffect(() => setNombreEditado(nombre), [nombre])
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()

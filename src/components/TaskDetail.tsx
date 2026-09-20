@@ -41,13 +41,6 @@ export function TaskDetail({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Si cambia la tarea abierta (o llega una actualización de Firestore), resincronizar.
-  useEffect(() => {
-    setTitle(task.title)
-    setDescription(task.description)
-    setConfirmDelete(false)
-  }, [task.id, task.title, task.description])
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()

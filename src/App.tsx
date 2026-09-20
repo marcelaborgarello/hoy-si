@@ -228,6 +228,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
 
       {abierta && (
         <TaskDetail
+          key={abierta.id}
           task={abierta}
           onClose={() => setOpenId(null)}
           onEdit={(patch) => void edit(abierta, patch)}

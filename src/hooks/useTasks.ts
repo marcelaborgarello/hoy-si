@@ -37,6 +37,8 @@ export function useTasks(uid: string | null) {
   )
 
   useEffect(() => {
+    // Reiniciamos el estado cuando cambia el store (cambio de usuario o modo).
+    // Este setState es aceptable porque estamos sincronizando con un sistema externo (el store).
     setTasks([])
     setLoading(true)
     return store.subscribe(

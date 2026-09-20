@@ -30,6 +30,7 @@ export function useConfig(uid: string | null) {
   useEffect(() => {
     const db = getDb()
     if (!db || !uid) {
+      // Este setState es aceptable: estamos sincronizando con un sistema externo (Firestore).
       setCargando(false)
       return
     }
