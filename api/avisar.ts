@@ -28,6 +28,7 @@ const TOLERANCIA_MIN = 120
 
 type TareaDoc = {
   title?: string
+  description?: string
   dueDate?: string | null
   dueTime?: string | null
   notify?: boolean
@@ -65,28 +66,68 @@ function proximoAviso(t: TareaDoc, desde: number): number | null {
   return momentos.find((m) => m > desde) ?? null
 }
 
-async function enviar(chatId: string, texto: string): Promise<boolean> {
+const APP_URL = 'https://tareas.ginialtech.com'
+
+/** Telegram rompe el mensaje si el texto trae <, > o &. */
+function escapar(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+async function enviar(
+  chatId: string,
+  texto: string,
+  botones?: unknown,
+): Promise<boolean> {
   const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: texto, parse_mode: 'HTML' }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: texto,
+      parse_mode: 'HTML',
+      // Sin esto Telegram muestra una vista previa enorme del link.
+      link_preview_options: { is_disabled: true },
+      ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}),
+    }),
   })
   if (!r.ok) log.error({ status: r.status }, 'Telegram rechazo el envio')
   return r.ok
 }
 
 /** El texto que llega al teléfono. Distinto si es el anticipado o el de la hora. */
-function armarMensaje(titulo: string, hora: string, faltan: number): string {
-  if (faltan > 0) {
-    const cuanto =
-      faltan >= 1440
-        ? 'mañana'
+function armarMensaje(t: TareaDoc, faltan: number): string {
+  const cuando =
+    faltan <= 0
+      ? `Es <b>ahora</b>, a las ${t.dueTime}`
+      : faltan >= 1440
+        ? `Es mañana a las ${t.dueTime}`
         : faltan >= 60
-          ? `en ${Math.round(faltan / 60)} h`
-          : `en ${faltan} min`
-    return `⏰ <b>${titulo}</b>\n\nEs ${cuanto}, a las ${hora}.`
-  }
-  return `⏰ <b>${titulo}</b>\n\nEs ahora, a las ${hora}.`
+          ? `Es en ${Math.round(faltan / 60)} h, a las ${t.dueTime}`
+          : `Es en ${faltan} min, a las ${t.dueTime}`
+
+  const desc = t.description?.trim()
+  return [
+    `⏰ <b>${escapar(t.title ?? '')}</b>`,
+    desc ? `\n${escapar(desc.slice(0, 300))}` : '',
+    `\n${cuando}.`,
+  ].join('')
+}
+
+/**
+ * Botones debajo del mensaje.
+ *
+ * "Ya la hice" y "En 10 min" hacen el trabajo sin salir de Telegram: si
+ * tachar cuesta un toque desde donde ya estás, se tacha. Si hay que abrir la
+ * app y buscar la tarea, muchas veces no.
+ */
+function armarBotones(uid: string, taskId: string) {
+  return [
+    [
+      { text: '✓ Ya la hice', callback_data: `hecha:${uid}:${taskId}` },
+      { text: '🕐 En 10 min', callback_data: `luego:${uid}:${taskId}` },
+    ],
+    [{ text: 'Abrir la lista', url: APP_URL }],
+  ]
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -165,7 +206,7 @@ export async function POST(request: Request): Promise<Response> {
 
     // Resta de dos números absolutos: no hay zonas horarias de por medio.
     const faltanMin = Math.round((t.dueAt - t.nextNotifyAt) / 60_000)
-    const ok = await enviar(chatId, armarMensaje(t.title, t.dueTime, faltanMin))
+    const ok = await enviar(chatId, armarMensaje(t, faltanMin), armarBotones(uid, doc.id))
 
     // Se avanza igual si Telegram falló: reintentar en loop es peor que
     // perder un aviso, y el error queda en los logs.
