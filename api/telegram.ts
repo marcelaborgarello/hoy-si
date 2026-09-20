@@ -1,5 +1,5 @@
 import pino from 'pino'
-import { getDbAdmin, hayCredencial } from './_firebase'
+import { estadoAdmin, getDbAdmin } from './_firebase'
 
 /**
  * Webhook del bot @hoysi_tareas_bot.
@@ -35,9 +35,9 @@ const VALIDEZ_MIN = 15
  * verdad que ese chat le habló al bot.
  */
 async function vincular(codigo: string, chatId: number): Promise<boolean> {
-  const db = getDbAdmin()
+  const db = await getDbAdmin()
   if (!db) {
-    log.error('falta FIREBASE_SERVICE_ACCOUNT: no se puede vincular')
+    log.error({ estado: estadoAdmin() }, 'no se pudo conectar a Firestore para vincular')
     return false
   }
 
@@ -102,6 +102,13 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json(await r.json(), { status: r.ok ? 200 : 502 })
   }
 
+  // Prueba real de conexión a Firestore, que es donde puede fallar la
+  // credencial aunque la variable exista.
+  if (accion === 'probar-firebase') {
+    const db = await getDbAdmin()
+    return Response.json({ conectado: Boolean(db), estado: estadoAdmin() })
+  }
+
   if (accion === 'estado') {
     if (!TOKEN) return Response.json({ error: 'falta el token' }, { status: 500 })
     const r = await fetch(`https://api.telegram.org/bot${TOKEN}/getWebhookInfo`)
@@ -111,7 +118,7 @@ export async function GET(request: Request): Promise<Response> {
   return Response.json({
     TELEGRAM_BOT_TOKEN: TOKEN ? `ok (${TOKEN.length} caracteres)` : 'FALTA',
     TELEGRAM_WEBHOOK_SECRET: SECRET ? `ok (${SECRET.length} caracteres)` : 'FALTA',
-    FIREBASE_SERVICE_ACCOUNT: hayCredencial() ? 'ok' : 'FALTA',
+    FIREBASE_SERVICE_ACCOUNT: estadoAdmin(),
   })
 }
 
