@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Estas reglas NO corren en el navegador: se despliegan a Google y se evalúan
+// en sus servidores, en cada operación. Aunque alguien reescriba el JavaScript
+// del cliente o pegue requests a mano, no puede saltearlas.
+//
+// request.auth lo arma Google verificando la firma del ID token de la sesión.
+// No se puede falsear desde el cliente.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cada usuario, y solo ese usuario, entra a su propia carpeta de tareas.
+    match /users/{uid}/tasks/{taskId} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && esTareaValida();
+    }
+
+    // Todo lo que no esté declarado arriba queda cerrado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+
+  function isOwner(uid) {
+    return request.auth != null && request.auth.uid == uid;
+  }
+
+  // Validación de forma en el servidor: que un cliente modificado no pueda
+  // escribir basura ni documentos gigantes en la base.
+  function esTareaValida() {
+    let d = request.resource.data;
+    return d.title is string
+      && d.title.size() > 0
+      && d.title.size() <= 200
+      && d.description is string
+      && d.description.size() <= 5000
+      && d.status in ['todo', 'doing', 'done']
+      && d.createdAt is number
+      && (d.startedAt == null || d.startedAt is number)
+      && (d.finishedAt == null || d.finishedAt is number)
+      && (d.dueDate == null || d.dueDate is string)
+      && (d.dueTime == null || d.dueTime is string)
+      && d.notes is list
+      && d.notes.size() <= 200;
+  }
+}

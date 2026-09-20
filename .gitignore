@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Secretos: NUNCA commitear
+.env
+.env.*
+!.env.example
+# Cuenta de servicio de Firebase Admin: contiene una clave privada.
+# No se usa en la app web; si no la necesitás para scripts, borrala.
+*firebase-adminsdk*.json
+.firebase/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
