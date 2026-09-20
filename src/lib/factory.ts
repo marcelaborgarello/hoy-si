@@ -1,4 +1,5 @@
 import type { NewTask, Task } from '../types/task'
+import { proximoAviso } from './alertas'
 
 export function newId(): string {
   return crypto.randomUUID()
@@ -6,10 +7,10 @@ export function newId(): string {
 
 /** Arma una tarea nueva completa a partir del input mínimo del formulario. */
 export function buildTask(input: NewTask): Omit<Task, 'id'> {
-  return {
+  const base = {
     title: input.title.trim(),
     description: input.description?.trim() ?? '',
-    status: 'todo',
+    status: 'todo' as const,
     createdAt: Date.now(),
     startedAt: null,
     finishedAt: null,
@@ -19,5 +20,9 @@ export function buildTask(input: NewTask): Omit<Task, 'id'> {
     notify: Boolean(input.dueTime) && (input.notify ?? false),
     notifyBeforeMin: input.notifyBeforeMin ?? null,
     notes: [],
-  }
+  } satisfies Omit<Task, 'id' | 'nextNotifyAt'>
+
+  // El momento del próximo aviso se guarda junto con la tarea: es lo que el
+  // servidor consulta para saber a quién avisarle.
+  return { ...base, nextNotifyAt: proximoAviso(base) }
 }

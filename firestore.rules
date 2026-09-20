@@ -75,6 +75,7 @@ service cloud.firestore {
           || (d.get('notifyBeforeMin', null) is int
               && d.get('notifyBeforeMin', 0) >= 0
               && d.get('notifyBeforeMin', 0) <= 10080))
+      && (d.get('nextNotifyAt', null) == null || d.get('nextNotifyAt', null) is int)
       && d.get('notes', []) is list
       && d.get('notes', []).size() <= 200;
   }

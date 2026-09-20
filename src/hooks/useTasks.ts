@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { NewTask, Note, Task } from '../types/task'
+import { proximoAviso } from '../lib/alertas'
 import { newId } from '../lib/factory'
 import { log } from '../lib/logger'
 import { createStore } from '../lib/store'
@@ -79,49 +80,54 @@ export function useTasks(uid: string | null) {
     }
   }, [])
 
+  /**
+   * Toda escritura pasa por acá, y acá se recalcula cuándo toca el próximo
+   * aviso. Así no hay forma de cambiar la hora, apagar el aviso o tachar la
+   * tarea y que quede un aviso viejo dando vueltas.
+   */
+  const guardar = useCallback(
+    (task: Task, patch: Partial<Omit<Task, 'id'>>) => {
+      const resultado = { ...task, ...patch }
+      return run(store.update(task.id, { ...patch, nextNotifyAt: proximoAviso(resultado) }))
+    },
+    [store, run],
+  )
+
   const actions = useMemo(
     () => ({
       add: (input: NewTask) => run(store.create(input)),
 
       /** Sella el arranque. Si ya había arrancado antes, respeta la fecha original. */
       start: (task: Task) =>
-        run(
-          store.update(task.id, {
-            status: 'doing',
-            startedAt: task.startedAt ?? Date.now(),
-          }),
-        ),
+        guardar(task, { status: 'doing', startedAt: task.startedAt ?? Date.now() }),
 
       /** Tachar. Si nunca la arrancaste, cuenta como que empezó y terminó ahora. */
       finish: (task: Task) => {
         const now = Date.now()
-        return run(
-          store.update(task.id, {
-            status: 'done',
-            startedAt: task.startedAt ?? now,
-            finishedAt: now,
-          }),
-        )
+        // Al terminarla, proximoAviso() devuelve null: no te avisa de algo hecho.
+        return guardar(task, {
+          status: 'done',
+          startedAt: task.startedAt ?? now,
+          finishedAt: now,
+        })
       },
 
       /** Volver a abrir algo tachado (pasa a "en curso" y borra el fin). */
-      reopen: (task: Task) => run(store.update(task.id, { status: 'doing', finishedAt: null })),
+      reopen: (task: Task) => guardar(task, { status: 'doing', finishedAt: null }),
 
       /** Devolver a pendiente y limpiar los relojes. */
       reset: (task: Task) =>
-        run(store.update(task.id, { status: 'todo', startedAt: null, finishedAt: null })),
+        guardar(task, { status: 'todo', startedAt: null, finishedAt: null }),
 
-      edit: (id: string, patch: Partial<Omit<Task, 'id'>>) => run(store.update(id, patch)),
+      edit: (task: Task, patch: Partial<Omit<Task, 'id'>>) => guardar(task, patch),
 
       /** Prende o apaga el aviso de una tarea. Al apagarlo se olvida también
        *  la anticipación, para no dejar un valor colgado que nadie ve. */
       toggleAviso: (task: Task) =>
-        run(
-          store.update(task.id, {
-            notify: !task.notify,
-            ...(task.notify ? { notifyBeforeMin: null } : {}),
-          }),
-        ),
+        guardar(task, {
+          notify: !task.notify,
+          ...(task.notify ? { notifyBeforeMin: null } : {}),
+        }),
 
       remove: (id: string) => run(store.remove(id)),
 
@@ -133,7 +139,7 @@ export function useTasks(uid: string | null) {
       removeNote: (task: Task, noteId: string) =>
         run(store.update(task.id, { notes: task.notes.filter((n) => n.id !== noteId) })),
     }),
-    [store, run],
+    [store, run, guardar],
   )
 
   return { tasks, loading, aviso, writeError, backend, byId, ...actions }

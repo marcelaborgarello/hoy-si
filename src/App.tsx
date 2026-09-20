@@ -233,7 +233,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
         <TaskDetail
           task={abierta}
           onClose={() => setOpenId(null)}
-          onEdit={(id, patch) => void edit(id, patch)}
+          onEdit={(patch) => void edit(abierta, patch)}
           onStart={(task) => void start(task)}
           onFinish={(task) => {
             void finish(task).then((ok) => {

@@ -238,6 +238,25 @@ pasa a *sus datos*, no qué le pasa al sistema. Y el badge de estado **no puede
 mentir**: si Firestore rechaza la conexión muestra "Sin guardar" en rojo, nunca
 "Guardado".
 
+### Corrección del 2026-09-20: el badge no se muestra siempre
+
+**Decisión de la dueña del proyecto.** El badge **deja de estar siempre en
+pantalla**: aparece **solo cuando hay un problema** y no se ve cuando todo anda
+bien. Silencio quiere decir que está guardado.
+
+Casos en los que sí tiene que aparecer: error de conexión, o el celular sin
+datos móviles activados.
+
+Lo que se mantiene de la regla de arriba es el principio: **el badge no puede
+mentir**. Lo que se cae es el supuesto de que para eso tenía que estar siempre
+visible. Un cartel permanente que dice "todo bien" es ruido, y encima se deja de
+leer — así que cuando un día dice otra cosa, tampoco se lee.
+
+> ⚠️ Esa regla anterior se escribió **sin consultarla**. Queda anotado como
+> antecedente: lo que se decide sobre la interfaz no se da por decidido solo
+> porque tenga una justificación linda escrita acá adentro. Si es una decisión
+> de producto, se pregunta.
+
 ## 7c. Las fechas no aprietan
 
 Apareció un "vence hoy" en rojo que generó alarma: *"¿Por qué me dice que vence
@@ -334,6 +353,38 @@ Hay que tener presente la distinción, porque se presta a confusión:
 > se descartó en el punto 4b — pero **ahora que va a existir un Worker igual
 > para Groq y WhatsApp, el costo de esa opción bajó**. Decisión pendiente del
 > usuario.
+
+### Regla firme: nada se filtra del lado del cliente (2026-09-20)
+
+Ratificado por la dueña del proyecto, y no depende de qué tan importante sea la
+app: *"por más que solo sea una todo list no se pueden filtrar del lado del
+cliente"*. **La seguridad no se negocia por tamaño del proyecto.**
+
+Son **dos cosas distintas** y conviene no mezclarlas:
+
+**1. Secretos.** Ya está resuelto arriba: ninguna clave privada toca el
+navegador. Sin `VITE_`, solo en el servidor.
+
+**2. Datos de la persona guardados en el navegador.** Esto es lo que se agrega
+ahora. `localStorage` es **modo de emergencia, no una opción de diseño**, porque:
+
+- Es **texto plano**: lo lee cualquier script que llegue a correr en la página.
+- **Sobrevive a cerrar sesión.** Queda ahí para quien use esa computadora después.
+- No tiene fecha de vencimiento ni lo protege ninguna regla del servidor.
+
+**Regla:** antes de persistir cualquier cosa nueva en el navegador, **se
+pregunta**. La respuesta por defecto es que va al servidor, donde las reglas
+deciden quién lo lee.
+
+Lo que hoy vive en el navegador es **`todo-list:tasks:v1`** (el respaldo de
+emergencia del punto 6) y está justificado: es la diferencia entre perder lo que
+anotaste y no perderlo. Pero tiene un agujero abierto — **al cerrar sesión no se
+borra**. Anotado en `docs/pendientes.md`.
+
+> Lo que **no** entra en esta regla, para no confundir: las tareas dibujadas en
+> pantalla y el caché que Firestore maneja solo. Eso es inevitable en cualquier
+> app web. La regla es sobre lo que se **persiste a propósito** y sobre los
+> secretos.
 
 ### Pendientes en orden
 

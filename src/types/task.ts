@@ -42,6 +42,15 @@ export const TaskSchema = z.object({
    * turno médico y sacar la basura no se avisan con la misma anticipación.
    */
   notifyBeforeMin: z.number().nullable().default(null),
+  /**
+   * Momento exacto (epoch ms) del PRÓXIMO aviso pendiente. null = no hay.
+   *
+   * Existe para que el servidor pueda preguntar "¿qué avisos tocan ahora?" con
+   * una sola consulta, en vez de recorrer todas las tareas y calcular horarios.
+   * Lo recalcula el cliente cada vez que cambia algo que lo afecte, y el
+   * servidor lo avanza al siguiente aviso cuando manda uno.
+   */
+  nextNotifyAt: z.number().nullable().default(null),
   notes: z.array(NoteSchema).default([]),
 })
 

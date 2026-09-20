@@ -96,26 +96,96 @@ que ubicarlo dos veces.
 que una quiera.
 
 - [ ] Campo para el nombre propio, con el de Google como valor inicial.
-- [ ] Decidir **dónde se guarda**, que es lo único con costo: en Firestore viaja
-      entre dispositivos pero hay que volver a tocar las reglas (recién
-      arregladas, punto 4); en el navegador es gratis pero no te sigue al
-      celular. Anotado, sin decidir.
+- [ ] Decidir dónde se guarda: en Firestore te sigue al celular, en el navegador
+      no. Anotado, sin decidir.
 
-**c) Sacar el cartelito de "Guardado en la nube".**
+**Por qué igual hay que tocar `firestore.rules` para un campo más** (la pregunta
+salió y la respuesta no es obvia):
 
-> ⚠️ **Confirmar primero de qué hablamos.** Lo anoté entendiendo que es **el
-> cartelito de arriba a la derecha**, no el guardado en la nube en sí (o sea, no
-> es sacar Firestore). Si era lo otro, corregir esto antes de tocar nada.
+No es por validar el campo. Es porque **Firestore niega por defecto todo camino
+que no esté declarado**. Al final de `firestore.rules` hay un
+`match /{document=**} { allow read, write: if false; }` que cierra todo lo demás.
 
-Y si es el cartelito, ojo con la regla del punto 7b de `AGENTS.md`: **el badge no
-puede mentir**. Existe justamente para avisarte cuando tus cosas **no** se están
-guardando. Borrarlo del todo te deja sin ese aviso.
+Hoy están abiertos **tres** caminos y nada más: `users/{uid}/tasks/{taskId}`,
+`users/{uid}/config/{doc}` y `vinculos/{codigo}`. Un nombre no es una tarea, así
+que necesita su propio lugar declarado.
 
-La salida que cumple las dos cosas: **que aparezca solo cuando hay un problema**
-y no se vea nunca cuando todo anda bien. Silencio = está guardado. Así se va el
-ruido de la pantalla sin perder la advertencia.
+Y ojo con la salida fácil de meterlo en `config`, que ya existe: la función
+`esConfigValida()` exige que `telegramChatId` sea `null` en lo que se escribe —
+y en una escritura con *merge* lo que se valida es **el documento completo
+resultante**, no solo el campo que tocaste. O sea que **apenas alguien vincula
+Telegram, el navegador ya no puede volver a escribir ese documento**. Está bien
+que sea así (el chat lo pone el servidor, no el cliente), pero significa que el
+nombre no puede vivir ahí.
+
+Es un toque chico igual: una regla nueva para el documento del perfil.
+
+**c) Sacar el cartelito de "Guardado en la nube".** Confirmado el 2026-09-20: es
+**el cartelito**, no el guardado en la nube en sí. Firestore se queda.
+
+**Decidido:** el cartelito **aparece solo cuando hay un problema** y no se ve
+cuando todo anda bien. Silencio quiere decir que está guardado.
+
+Casos en los que sí tiene que aparecer:
+
+- Error de conexión con la nube.
+- El celular **sin datos móviles activados**.
+
+**Cuando aparece, va en rojo y con un botón para reintentar.** Es la excepción a
+la regla del rojo (punto 7c de `AGENTS.md`): acá el rojo está bien, porque algo
+salió mal de verdad — no le está reclamando nada a la persona.
 
 - [ ] Que el estado de guardado se muestre solo cuando falla.
+- [ ] En rojo, diciendo que **no se guardó**, con botón de **Reintentar**.
+
+> El botón es más trabajo de lo que parece: para reintentar hay que **acordarse
+> de qué escritura falló**. Hoy las escrituras pasan por el helper `run()` de
+> `useTasks`, que devuelve `true`/`false` y ahí termina — nadie se guarda la
+> operación que no salió. Reintentar significa retenerla hasta que funcione.
+
+- [ ] **Borrar `todo-list:tasks:v1` del navegador al cerrar sesión.** Hoy
+      `signOut` solo cierra la sesión de Firebase y **las tareas quedan guardadas
+      en esa computadora**, legibles para quien la use después. Sale directo de
+      la regla de seguridad del punto 7e de `AGENTS.md`.
+      ⚠️ Ojo con el orden: si todavía hay cosas que nunca subieron a la nube
+      (punto 2c), **borrarlas al cerrar sesión las pierde para siempre**. Primero
+      la migración, después el borrado.
+
+> Ya quedó corregido el punto 7b de `AGENTS.md`, que decía que el badge tenía que
+> estar siempre visible. Esa regla se había escrito sin consultarla.
+
+---
+
+## 2c. ⚠️ Averiguar dónde están guardadas las tareas hoy
+
+**Pregunta abierta del 2026-09-20: en la consola de Firebase no se ve ninguna
+colección.** Hay que resolverlo antes que lo demás, porque de la respuesta
+depende si hay tareas en riesgo.
+
+La app guarda en `users/{uid}/tasks` (`src/lib/store.firestore.ts`), y si la nube
+falla **cae sola a guardar en el navegador** y sigue andando. Esa es la sospecha
+principal: hasta ayer el dominio no estaba autorizado y las reglas rechazaban
+escrituras (punto 4), así que **es probable que las tareas nunca hayan llegado a
+la nube** y estén en la computadora, bajo la clave
+`todo-list:tasks:v1` de localStorage.
+
+Cómo confirmarlo, en orden y sin tocar código:
+
+- [ ] Abrir la app y mirar **el cartelito** de arriba a la derecha: dice
+      "Guardado en la nube" o "Solo en esta compu". Esa es la respuesta directa.
+      *(Sí: es justo el cartelito del punto 2b. Cuando se haga ese cambio, que el
+      estado siga estando disponible en algún lado — dentro del menú del punto
+      2b-a, por ejemplo — aunque no esté siempre a la vista.)*
+- [ ] En la consola de Firebase, confirmar que es el proyecto
+      **`todo-list-846e2`** y la base **`(default)`**.
+- [ ] Buscar la colección **`users`** en la raíz. El documento `users/{uid}` en sí
+      **nunca se crea**: la app escribe directo en la subcolección `tasks`. La
+      consola igual muestra el `uid` listado en gris o itálica, y las tareas están
+      adentro. Que el id se vea apagado **no** quiere decir que no haya nada.
+- [ ] Si efectivamente no hay nada en la nube: las tareas de la compu **no suben
+      solas**. Es el pendiente viejo del punto 6 de `AGENTS.md`, que ahora deja de
+      ser teórico. **No borrar los datos del navegador ni cerrar sesión hasta
+      resolverlo.**
 
 ---
 

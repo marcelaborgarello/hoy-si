@@ -7,7 +7,8 @@ import { daysSince, formatDateTime, formatDueDate, formatDuration, todayKey } fr
 type Props = {
   task: Task
   onClose: () => void
-  onEdit: (id: string, patch: Partial<Omit<Task, 'id'>>) => void
+  /** Solo el patch: la tarea la conoce este componente. */
+  onEdit: (patch: Partial<Omit<Task, 'id'>>) => void
   onStart: (task: Task) => void
   onFinish: (task: Task) => void
   onReset: (task: Task) => void
@@ -58,12 +59,12 @@ export function TaskDetail({
 
   const saveTitle = () => {
     const clean = title.trim()
-    if (clean && clean !== task.title) onEdit(task.id, { title: clean })
+    if (clean && clean !== task.title) onEdit({ title: clean })
     else if (!clean) setTitle(task.title)
   }
 
   const saveDescription = () => {
-    if (description !== task.description) onEdit(task.id, { description })
+    if (description !== task.description) onEdit({ description })
   }
 
   const submitNote = () => {
@@ -141,7 +142,7 @@ export function TaskDetail({
                     value={task.dueDate ?? ''}
                     onChange={(e) =>
                       // Sin fecha no puede quedar una hora colgada.
-                      onEdit(task.id, {
+                      onEdit({
                         dueDate: e.target.value || null,
                         ...(e.target.value ? {} : { dueTime: null }),
                       })
@@ -165,7 +166,7 @@ export function TaskDetail({
                     className={`dt${task.dueTime ? '' : ' vacio'}`}
                     value={task.dueTime ?? ''}
                     onChange={(e) =>
-                      onEdit(task.id, {
+                      onEdit({
                         dueTime: e.target.value || null,
                         // Poner hora sin día asume hoy.
                         ...(e.target.value && !task.dueDate ? { dueDate: todayKey() } : {}),
@@ -200,7 +201,7 @@ export function TaskDetail({
               notify={task.notify}
               notifyBeforeMin={task.notifyBeforeMin}
               onToggleNotify={() => onToggleAviso(task)}
-              onChangeAnticipacion={(min) => onEdit(task.id, { notifyBeforeMin: min })}
+              onChangeAnticipacion={(min) => onEdit({ notifyBeforeMin: min })}
             />
           </section>
 

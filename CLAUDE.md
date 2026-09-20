@@ -97,7 +97,13 @@ se dice que se está probando en producción. Lo demás se prueba en local.
 
 ---
 
-## 6. Secretos
+## 6. Seguridad
+
+> **Regla que Marcela exige siempre, en todos sus proyectos: nada se filtra del
+> lado del cliente.** No se relaja porque esto "sea solo una todo list" — el
+> tamaño del proyecto no cambia el criterio. Ante la duda, se pregunta.
+
+### Secretos
 
 - Todo lo que empieza con **`VITE_` es público**: va dentro del JavaScript que
   baja cualquiera. Vercel ni siquiera deja marcarlas como secretas.
@@ -107,6 +113,23 @@ se dice que se está probando en producción. Lo demás se prueba en local.
   al repo.
 - **Si aparece una credencial, primero se deja la infraestructura andando y
   recién después se limpia.** Ver abajo.
+
+### Datos guardados en el navegador
+
+**`localStorage` es modo de emergencia, no una opción de diseño.** Es texto
+plano, lo lee cualquier script que llegue a correr en la página, y **sobrevive a
+cerrar sesión**: queda ahí para el que use esa computadora después.
+
+- **Antes de persistir algo nuevo en el navegador, se pregunta.** La respuesta
+  por defecto es que va al servidor, donde las reglas deciden quién lo lee.
+- Lo único que hoy vive ahí es **`todo-list:tasks:v1`**, el respaldo que evita
+  perder lo anotado cuando la nube no responde. Está justificado y se avisa en
+  pantalla.
+- No entran en esta regla las tareas dibujadas en pantalla ni el caché propio de
+  Firestore: eso es inevitable. La regla es sobre lo que se **persiste a
+  propósito**.
+
+Ver el punto 7e de `AGENTS.md`.
 
 ---
 

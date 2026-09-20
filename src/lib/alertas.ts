@@ -38,3 +38,31 @@ export function linkGoogleCalendar(task: Task): string | null {
 export function puedeTenerAlerta(task: Task): boolean {
   return Boolean(task.dueDate && task.dueTime)
 }
+
+/** Los momentos en que hay que avisar de una tarea, de más temprano a más tarde. */
+export function momentosDeAviso(task: Pick<Task, 'dueDate' | 'dueTime' | 'notifyBeforeMin'>): number[] {
+  if (!task.dueDate || !task.dueTime) return []
+
+  const exacto = dueMoment(task.dueDate, task.dueTime)
+  const momentos = [exacto]
+
+  if (task.notifyBeforeMin) {
+    momentos.unshift(exacto - task.notifyBeforeMin * 60_000)
+  }
+  return momentos
+}
+
+/**
+ * Cuándo toca el próximo aviso pendiente, o null si no queda ninguno.
+ *
+ * Se recalcula en el cliente cada vez que cambia la hora, el aviso o la
+ * anticipación. Si no hay aviso activo o la tarea ya está terminada, devuelve
+ * null y el servidor deja de verla.
+ */
+export function proximoAviso(
+  task: Pick<Task, 'dueDate' | 'dueTime' | 'notify' | 'notifyBeforeMin' | 'status'>,
+  desde = Date.now(),
+): number | null {
+  if (!task.notify || task.status === 'done') return null
+  return momentosDeAviso(task).find((m) => m > desde) ?? null
+}
