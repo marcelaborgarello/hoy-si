@@ -137,6 +137,51 @@ Ver el punto 7e de `AGENTS.md`.
 
 ---
 
+## 6b. Configurar cuentas y consolas: la parte que más se rompe
+
+**Regla que Marcela pidió explícitamente**, porque ya perdió tiempo por esto más
+de una vez. Las consolas de terceros (Vercel, Cloudflare, Firebase, Google
+Cloud) son donde el agente no ve nada y ella hace el trabajo a ciegas.
+
+### Antes de mandarla a una consola
+
+- **Decir el mapa completo de entrada, no de a pedazos.** Si un valor va en dos
+  lugares, se dice **desde el principio** y se explica por qué. Mencionarlo al
+  pasar, en medio de otro párrafo, es lo mismo que no decirlo.
+- **Un solo paso por mensaje**, con un lugar y un valor. Nada de tres pantallas
+  distintas en la misma respuesta.
+- **Nombres exactos de lo que se ve en pantalla, no los de la documentación.**
+  La sección de Cloudflare se llama `Runtime variables and secrets`, en inglés,
+  aunque el resto del panel esté en español y la documentación diga otra cosa.
+  Si el nombre real no se conoce, **se mira antes** (documentación o navegador)
+  en vez de mandarla a buscar algo que no existe con ese nombre.
+- **Decir en qué entorno va** (Production / Preview / Development) y si hace
+  falta **redeploy** para que tome efecto. Las variables se compilan adentro del
+  build: cambiarlas sin redeployar no hace absolutamente nada.
+- **Dar la forma de verificar que quedó bien**, para que no dependa de
+  preguntarle al agente. Ejemplo: abrir la URL del Worker y ver si cambió lo que
+  responde.
+
+### Cuando no encuentra algo
+
+No repetir la misma indicación más fuerte. **Averiguar el nombre real, pedir que
+diga qué ve en la pantalla, o —si da permiso— mirar el navegador.** Que algo
+"esté en Settings" no ayuda si en su pantalla está arriba del todo y ella está
+mirando el medio.
+
+### Lo que ya pasó
+
+- `TELEGRAM_WEBHOOK_SECRET` cargado pero **en el entorno equivocado**: el
+  diagnóstico decía FALTA y se perdió un rato hasta encontrar el typo.
+- `CRON_SECRET` va **en dos lados** (Cloudflare lo manda, Vercel lo verifica).
+  Se dijo al pasar dentro de una lista larga, y quedó cargado en uno solo.
+- Se la mandó a buscar "Variables and Secrets" —el nombre de la documentación—
+  cuando en su pantalla dice `Runtime variables and secrets`.
+- Se le pasó una URL larga que se cortó al copiar y terminó en un 404 de otro
+  servicio.
+
+---
+
 ## 7. Errores ya cometidos — no repetirlos
 
 Están acá porque cada uno costó tiempo real.
@@ -162,6 +207,13 @@ Están acá porque cada uno costó tiempo real.
    preguntar.
 8. **Se afirmó en el login que "no la ve ni quien hizo esta app"**, que era
    falso: quien administra el proyecto tiene acceso técnico a la base.
+9. **Se editaron archivos con PowerShell y se rompió la codificación** (los
+   acentos quedaron como `cuÃ¡nto`). Pasó dos veces. **Para editar archivos se
+   usa la herramienta de edición, nunca `Set-Content`.** Si hay que hacerlo con
+   PowerShell sí o sí, va con `System.IO.File` y UTF-8 sin BOM, y se verifica
+   un acento después.
+10. **Se la mandó a configurar cosas en consolas de a pedazos** y con nombres
+    que no coincidían con su pantalla. Ver el punto 6b.
 
 El patrón de casi todos: **se avanzó sin verificar**. La verificación es parte
 del trabajo, no un paso opcional al final.
