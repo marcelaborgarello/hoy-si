@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacidad — Hoy sí</title>
+    <meta name="theme-color" content="#0d0f14" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230d0f14'/><text x='50' y='50' font-size='62' fill='%237dd3a0' text-anchor='middle' dominant-baseline='central'>✦</text></svg>"
+    />
+    <style>
+      :root {
+        --bg: #0d0f14;
+        --surface: #181d28;
+        --border: #272e3d;
+        --text: #e8ecf5;
+        --dim: #99a3b8;
+        --accent: #7dd3a0;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+          sans-serif;
+        line-height: 1.65;
+        font-size: 16px;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+      }
+      h1 {
+        font-size: 30px;
+        letter-spacing: -0.03em;
+        margin: 0 0 6px;
+      }
+      .fecha {
+        color: #646e84;
+        font-size: 14px;
+        margin: 0 0 36px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 34px 0 10px;
+        letter-spacing: -0.01em;
+      }
+      p,
+      li {
+        color: var(--dim);
+      }
+      strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      a {
+        color: var(--accent);
+      }
+      ul {
+        padding-left: 20px;
+      }
+      li {
+        margin-bottom: 7px;
+      }
+      .box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin: 22px 0;
+      }
+      footer {
+        margin-top: 44px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+        font-size: 14px;
+        color: #646e84;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Política de privacidad</h1>
+      <p class="fecha">Hoy sí — actualizada el 19 de septiembre de 2026</p>
+
+      <p>
+        <strong>Hoy sí</strong> es una lista de tareas personal. Esta página explica, sin vueltas,
+        qué datos se guardan y quién puede verlos.
+      </p>
+
+      <h2>Qué se guarda</h2>
+      <ul>
+        <li>
+          <strong>Tu cuenta de Google:</strong> tu dirección de correo, tu nombre y tu foto de
+          perfil. Se usan únicamente para identificarte al entrar y para mostrar tu nombre en la
+          pantalla.
+        </li>
+        <li>
+          <strong>Lo que vos escribís:</strong> el título, la descripción, las notas, las fechas y
+          los horarios de tus tareas.
+        </li>
+      </ul>
+
+      <h2>Qué NO se hace</h2>
+      <ul>
+        <li>No se venden ni se comparten tus datos con nadie.</li>
+        <li>No hay publicidad.</li>
+        <li>No hay rastreadores, cookies de terceros ni analítica.</li>
+        <li>No se lee tu correo, tus contactos ni ningún otro dato de tu cuenta de Google.</li>
+      </ul>
+
+      <h2>Quién puede ver tus tareas</h2>
+      <p>
+        Tus tareas se guardan en Google Cloud Firestore, en un espacio propio identificado con tu
+        usuario. Las reglas de seguridad se ejecutan en los servidores de Google y
+        <strong>impiden que cualquier otra persona que use la app acceda a tu lista</strong>, aunque
+        modifique el programa desde su navegador.
+      </p>
+
+      <div class="box">
+        <p style="margin: 0">
+          <strong>Con honestidad:</strong> quien administra este proyecto conserva acceso técnico a
+          la base de datos, como pasa en cualquier aplicación. No se consultan tus tareas, pero
+          sería falso decir que es imposible. Si esto te preocupa, no escribas información sensible
+          acá.
+        </p>
+      </div>
+
+      <h2>Borrar tus datos</h2>
+      <p>
+        Podés borrar cualquier tarea desde la app y desaparece de la base al instante. Si querés que
+        se elimine tu cuenta completa y todo lo asociado, escribí a
+        <a href="mailto:imprenart@gmail.com">imprenart@gmail.com</a> y se hace.
+      </p>
+
+      <h2>Servicios que se usan</h2>
+      <p>
+        La aplicación funciona sobre <strong>Firebase Authentication</strong> y
+        <strong>Cloud Firestore</strong> (Google) para el ingreso y el guardado, y se publica en
+        <strong>Vercel</strong>. Esos servicios procesan los datos descritos arriba según sus
+        propias políticas.
+      </p>
+
+      <h2>Cambios</h2>
+      <p>
+        Si esta política cambia, se actualiza la fecha del encabezado. Si el cambio es importante,
+        se avisa dentro de la aplicación.
+      </p>
+
+      <h2>Contacto</h2>
+      <p>
+        Cualquier duda, a <a href="mailto:imprenart@gmail.com">imprenart@gmail.com</a>.
+      </p>
+
+      <footer>
+        <a href="/">← Volver a Hoy sí</a>
+      </footer>
+    </main>
+  </body>
+</html>

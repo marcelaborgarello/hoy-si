@@ -213,6 +213,17 @@ button {
   line-height: 1.5;
 }
 
+.signin-foot a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(125 211 160 / 0.35);
+  white-space: nowrap;
+}
+
+.signin-foot a:hover {
+  border-bottom-color: var(--accent);
+}
+
 .signin-foot code {
   color: var(--text-dim);
   background: var(--bg-soft);

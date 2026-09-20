@@ -21,7 +21,8 @@ export function SignIn({ onSignIn, error }: Props) {
         {error && <p className="signin-error">{error}</p>}
 
         <p className="signin-foot">
-          Tu lista es tuya y de nadie más. No la ve ni quien hizo esta app.
+          Tu lista es privada: ninguna otra persona que use la app puede verla.{' '}
+          <a href="/privacidad">Cómo se cuidan tus datos</a>
         </p>
       </div>
     </div>
