@@ -1,5 +1,8 @@
 import pino from 'pino'
-import { estadoAdmin, getDbAdmin } from './_firebase'
+// La extensión .js es obligatoria: el proyecto es ESM ("type": "module") y
+// Node no resuelve imports relativos sin ella. Sin esto la función ni
+// arranca y Vercel devuelve FUNCTION_INVOCATION_FAILED.
+import { estadoAdmin, getDbAdmin } from './_firebase.js'
 
 /**
  * Webhook del bot @hoysi_tareas_bot.
