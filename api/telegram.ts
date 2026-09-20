@@ -38,7 +38,40 @@ async function responder(chatId: number, texto: string): Promise<void> {
  * Diagnóstico: dice si el servidor ve las variables, nunca su contenido.
  * Sirve para saber si faltan o si quedaron cargadas en el entorno equivocado.
  */
-export async function GET(): Promise<Response> {
+const WEBHOOK_URL = 'https://tareas.ginialtech.com/api/telegram'
+
+export async function GET(request: Request): Promise<Response> {
+  const accion = new URL(request.url).searchParams.get('accion')
+
+  /**
+   * Le dice a Telegram a qué URL mandar los mensajes.
+   *
+   * Lo hace el propio servidor con SU copia del secreto: así nadie de afuera
+   * necesita conocer el valor para configurarlo, y no importa si al copiarlo
+   * se perdió un carácter. La URL está fija en el código, así que llamar a
+   * esto desde afuera no permite desviar el bot a ningún lado.
+   */
+  if (accion === 'configurar') {
+    if (!TOKEN || !SECRET) return Response.json({ error: 'faltan variables' }, { status: 500 })
+
+    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: WEBHOOK_URL,
+        secret_token: SECRET,
+        allowed_updates: ['message'],
+      }),
+    })
+    return Response.json(await r.json(), { status: r.ok ? 200 : 502 })
+  }
+
+  if (accion === 'estado') {
+    if (!TOKEN) return Response.json({ error: 'falta el token' }, { status: 500 })
+    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/getWebhookInfo`)
+    return Response.json(await r.json())
+  }
+
   return Response.json({
     TELEGRAM_BOT_TOKEN: TOKEN ? `ok (${TOKEN.length} caracteres)` : 'FALTA',
     TELEGRAM_WEBHOOK_SECRET: SECRET ? `ok (${SECRET.length} caracteres)` : 'FALTA',
