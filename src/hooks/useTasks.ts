@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { NewTask, Note, Task } from '../types/task'
 import { newId } from '../lib/factory'
+import { log } from '../lib/logger'
 import { createStore } from '../lib/store'
 
 type Aviso = { text: string; hint: string | null }
@@ -45,7 +46,7 @@ export function useTasks(uid: string | null) {
       (err) => {
         // Nunca dejar la pantalla colgada en "Cargando…" ni perder lo que
         // escriba: pasamos a guardar en esta computadora y lo avisamos.
-        console.error('[store] la nube rechazó la conexión:', err)
+        log.error({ scope: 'store' }, `la nube rechazo la conexion: ${err.message}`)
         setAviso({
           text: 'No me pude conectar a la nube, así que guardo todo en esta compu. Tus cosas están a salvo, pero no las vas a ver en el celular.',
           hint: import.meta.env.DEV
@@ -72,7 +73,7 @@ export function useTasks(uid: string | null) {
       setWriteError(null)
       return true
     } catch (err) {
-      console.error('[store] no se pudo guardar:', err)
+      log.error({ scope: 'store' }, `no se pudo guardar: ${(err as Error).message}`)
       setWriteError('No se pudo guardar eso. Fijate que tengas internet y probá de nuevo.')
       return false
     }

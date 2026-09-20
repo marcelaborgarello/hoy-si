@@ -11,6 +11,7 @@ import {
 import { parseTask, type NewTask, type Task } from '../types/task'
 import { buildTask } from './factory'
 import { getDb } from './firebase'
+import { log } from './logger'
 import type { TaskStore } from './store'
 
 /**
@@ -40,7 +41,7 @@ export function createFirestoreStore(uid: string): TaskStore {
           onChange(tasks)
         },
         (err) => {
-          console.error('[firestore] error escuchando tareas:', err)
+          log.error({ scope: 'firestore' }, `error escuchando tareas: ${err.message}`)
           onError?.(err)
         },
       )

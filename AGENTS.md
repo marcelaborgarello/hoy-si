@@ -346,12 +346,42 @@ Hay que tener presente la distinción, porque se presta a confusión:
 4. Groq: las ideas que encajan con el punto 1 del documento son partir una
    tarea grande en pasos chicos y estimar cuánto lleva de verdad.
 
+## 7f. Logs: pino, y cero `console`
+
+Pedido textual: *"Hay que poner pino para los logs en vercel. No me pongas ni un
+solo console!"*.
+
+**Regla: en ningún archivo se llama a `console`.** Se usa `log` de
+`src/lib/logger.ts`. Hay una regla `no-console: error` en `.oxlintrc.json` que
+lo hace fallar el lint, con excepción para el propio `logger.ts` y `api/`.
+
+El detalle que hacía falta entender: **esta app corre entera en el navegador**,
+y los Runtime Logs de Vercel solo muestran lo que loguea una **función de
+servidor**. Un `log.error()` en el cliente se queda en la consola de quien usa
+la app y no llega a Vercel. Por eso el logging tiene dos mitades:
+
+| Archivo | Dónde corre | Para qué |
+|---|---|---|
+| `src/lib/logger.ts` | navegador | `pino` con `browser.transmit`: los niveles `warn` y superiores se mandan a `/api/log`. En desarrollo no transmite nada. |
+| `api/log.ts` | servidor (Vercel Function) | Recibe y escribe con `pino`. **Esto es lo que se ve en los Runtime Logs.** |
+
+Cuidados que ya están resueltos y conviene no romper:
+
+- El envío usa `navigator.sendBeacon` (sobrevive al cierre de la pestaña) con
+  `fetch` de respaldo. **Un log nunca puede frenar ni romper la app**: todo
+  está envuelto en try/catch y los errores de envío se descartan.
+- `/api/log` es **un endpoint público**: valida el tamaño (4 KB), la forma y el
+  nivel, y recorta los textos. Asume que puede recibir basura.
+- Solo viaja texto acotado, nunca objetos completos — para no mandar sin querer
+  el contenido de las tareas de la persona a los logs.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés
   (`status`, `createdAt`), textos al usuario en castellano y **sin jerga**
   (ver punto 7b).
 - Nada de `window.confirm` / `alert`: confirmación en dos pasos dentro del panel.
+- **Nunca `console.*`**: se usa `log` de `src/lib/logger.ts` (ver punto 7f).
 - Se respeta `prefers-reduced-motion` (el confeti se apaga).
 - Comandos: `bun run dev`, `bun run build`, `bun run lint`.
 

@@ -1,5 +1,6 @@
 import type { NewTask, Task } from '../types/task'
 import { isFirebaseConfigured } from './firebase'
+import { log } from './logger'
 import { createLocalStore } from './store.local'
 import { createFirestoreStore } from './store.firestore'
 
@@ -32,7 +33,7 @@ export function createStore(uid: string | null): { store: TaskStore; backend: Ba
       return { store: createFirestoreStore(uid), backend: 'firestore' }
     } catch (err) {
       // Si Firestore no arranca, no dejamos al usuario sin app.
-      console.error('[store] Firestore falló, uso localStorage:', err)
+      log.error({ scope: 'store' }, `la nube no arranco, uso el navegador: ${String(err)}`)
     }
   }
   return { store: createLocalStore(), backend: 'local' }

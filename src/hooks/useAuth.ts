@@ -7,6 +7,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { getAuthInstance, isFirebaseConfigured } from '../lib/firebase'
+import { log } from '../lib/logger'
 
 export type AuthState = {
   user: User | null
@@ -46,11 +47,11 @@ export function useAuth(): AuthState {
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return // el usuario cerró la ventana: no es un error que mostrar
       }
-      // El código va SIEMPRE a la consola (no a la pantalla): sin esto, un
+      // El código se registra SIEMPRE (no se muestra en pantalla): sin esto, un
       // problema de configuración en producción es imposible de diagnosticar.
       // Ej: auth/unauthorized-domain = falta agregar el dominio en
       // Firebase Console -> Authentication -> Settings -> Authorized domains.
-      console.error('[auth]', code, err)
+      log.error({ code }, `login fallido: ${code || (err as Error).message}`)
       setError(
         code === 'auth/network-request-failed'
           ? 'Parece que no hay internet. Probá de nuevo en un rato.'
