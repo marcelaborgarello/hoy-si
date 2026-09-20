@@ -23,6 +23,11 @@ export function formatDueDate(iso: string): string {
   return fmtDate.format(new Date(y, m - 1, d))
 }
 
+/** 'HH:MM' tal cual, listo para mostrar. */
+export function formatHora(hhmm: string): string {
+  return hhmm
+}
+
 /** Duración en lenguaje humano: "45 min", "2 h 15 min", "3 días". */
 export function formatDuration(ms: number): string {
   if (ms < 0) return '—'

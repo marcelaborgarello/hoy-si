@@ -91,6 +91,7 @@ service cloud.firestore {
       && (d.get('dueDate', null) == null || d.get('dueDate', null) is string)
       && (d.get('dueTime', null) == null || d.get('dueTime', null) is string)
       && d.get('notify', false) is bool
+      && d.get('notifyAtTime', true) is bool
       && (d.get('notifyBeforeMin', null) == null
           || (d.get('notifyBeforeMin', null) is int
               && d.get('notifyBeforeMin', 0) >= 0

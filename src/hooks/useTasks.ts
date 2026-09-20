@@ -121,12 +121,20 @@ export function useTasks(uid: string | null) {
 
       edit: (task: Task, patch: Partial<Omit<Task, 'id'>>) => guardar(task, patch),
 
-      /** Prende o apaga el aviso de una tarea. Al apagarlo se olvida también
-       *  la anticipación, para no dejar un valor colgado que nadie ve. */
-      toggleAviso: (task: Task) =>
+      /**
+       * Guarda los dos avisos de una tarea. Son independientes: se puede
+       * querer solo el anticipado, solo el de la hora, o los dos.
+       *
+       * Destildar los dos apaga el aviso; no hace falta una acción aparte
+       * para eso.
+       */
+      cambiarAvisos: (
+        task: Task,
+        patch: { notifyAtTime: boolean; notifyBeforeMin: number | null },
+      ) =>
         guardar(task, {
-          notify: !task.notify,
-          ...(task.notify ? { notifyBeforeMin: null } : {}),
+          ...patch,
+          notify: patch.notifyAtTime || patch.notifyBeforeMin !== null,
         }),
 
       remove: (id: string) => run(store.remove(id)),

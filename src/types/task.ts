@@ -29,17 +29,30 @@ export const TaskSchema = z.object({
    */
   dueTime: z.string().nullable().default(null),
   /**
-   * Si hay que avisar por Telegram a la hora de la tarea.
+   * Si esta tarea avisa por Telegram. Es el interruptor general.
    *
    * Arranca APAGADO a propósito: tener hora significa que está agendada, no
    * que quieras que te suene el teléfono. Muchas veces se agenda algo solo
    * para revisarlo.
+   *
+   * Queda en `false` solo cuando NO hay ningún aviso elegido, o sea cuando
+   * `notifyAtTime` es false y `notifyBeforeMin` es null.
    */
   notify: z.boolean().default(false),
   /**
-   * Minutos de anticipación para un SEGUNDO aviso, además del de la hora.
-   * null = solo avisa a la hora. Lo elige la persona por tarea, porque un
-   * turno médico y sacar la basura no se avisan con la misma anticipación.
+   * Avisar en el horario exacto de la tarea.
+   *
+   * Es independiente del aviso anticipado: se puede querer solo el de antes
+   * —algo que hay que preparar media hora antes, y a la hora ya no sirve que
+   * suene— o solo el de la hora, o los dos.
+   *
+   * Default `true` para que las tareas que ya tenían aviso sigan igual.
+   */
+  notifyAtTime: z.boolean().default(true),
+  /**
+   * Minutos de anticipación del aviso previo. null = no hay aviso previo.
+   * Lo elige la persona por tarea, porque un turno médico y sacar la basura
+   * no se avisan con la misma anticipación.
    */
   notifyBeforeMin: z.number().nullable().default(null),
   /**
@@ -65,6 +78,7 @@ export type NewTask = {
   dueDate?: string | null
   dueTime?: string | null
   notify?: boolean
+  notifyAtTime?: boolean
   notifyBeforeMin?: number | null
 }
 

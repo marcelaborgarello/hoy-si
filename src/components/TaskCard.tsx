@@ -7,7 +7,10 @@ type Props = {
   onToggle: (task: Task) => void
   onStart: (task: Task) => void
   onOpen: (task: Task) => void
-  onToggleAviso: (task: Task) => void
+  onCambiarAvisos: (
+    task: Task,
+    patch: { notifyAtTime: boolean; notifyBeforeMin: number | null },
+  ) => void
   onAbrirConfig: () => void
   telegramConectado: boolean
 }
@@ -54,7 +57,7 @@ export function TaskCard({
   onToggle,
   onStart,
   onOpen,
-  onToggleAviso,
+  onCambiarAvisos,
   onAbrirConfig,
   telegramConectado,
 }: Props) {
@@ -111,7 +114,7 @@ export function TaskCard({
           <AvisosMini
             task={task}
             telegramConectado={telegramConectado}
-            onToggleAviso={onToggleAviso}
+            onCambiarAvisos={onCambiarAvisos}
             onAbrirConfig={onAbrirConfig}
           />
         )}

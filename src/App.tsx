@@ -59,7 +59,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
     reopen,
     reset,
     edit,
-    toggleAviso,
+    cambiarAvisos,
     remove,
     addNote,
     removeNote,
@@ -217,7 +217,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
                   onStart={(task) => void start(task)}
                   onOpen={(task) => setOpenId(task.id)}
                   telegramConectado={telegramConectado}
-                  onToggleAviso={(t) => void toggleAviso(t)}
+                  onCambiarAvisos={(t, patch) => void cambiarAvisos(t, patch)}
                   onAbrirConfig={() => setVerConfig(true)}
                 />
               ))}
@@ -242,7 +242,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
           onAddNote={(task, text) => void addNote(task, text)}
           onRemoveNote={(task, noteId) => void removeNote(task, noteId)}
           telegramConectado={telegramConectado}
-          onToggleAviso={(t) => void toggleAviso(t)}
+          onCambiarAvisos={(t, patch) => void cambiarAvisos(t, patch)}
         />
       )}
 

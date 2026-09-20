@@ -1,11 +1,16 @@
+import { useState } from 'react'
 import type { Task } from '../types/task'
-import { linkGoogleCalendar, puedeTenerAlerta } from '../lib/alertas'
+import { linkGoogleCalendar, puedeTenerAlerta, tieneAlgunAviso } from '../lib/alertas'
+import { ElegirAvisos } from './ElegirAvisos'
 import { IconoCalendar, IconoTelegram } from './iconos'
 
 type Props = {
   task: Task
   telegramConectado: boolean
-  onToggleAviso: (task: Task) => void
+  onCambiarAvisos: (
+    task: Task,
+    patch: { notifyAtTime: boolean; notifyBeforeMin: number | null },
+  ) => void
   /** Si falta conectar Telegram, el botón lleva ahí en vez de no hacer nada. */
   onAbrirConfig: () => void
 }
@@ -13,27 +18,36 @@ type Props = {
 /**
  * Los dos avisos dentro de la tarjeta, solo con el logo.
  *
- * El de Telegram es un interruptor: tener hora significa que la tarea está
- * agendada, no que tenga que sonar el teléfono. Se enciende a propósito, por
- * tarea. El de Calendar es un link.
+ * El de Telegram abre el globo para elegir los avisos ahí mismo: antes había
+ * que entrar al detalle para descubrir que se podía avisar con anticipación,
+ * y nadie lo encontraba.
  */
-export function AvisosMini({ task, telegramConectado, onToggleAviso, onAbrirConfig }: Props) {
+export function AvisosMini({ task, telegramConectado, onCambiarAvisos, onAbrirConfig }: Props) {
+  const [eligiendo, setEligiendo] = useState(false)
+
   const sinHora = !puedeTenerAlerta(task)
   const link = linkGoogleCalendar(task)
 
-  // Con hora pero sin Telegram, el botón sigue vivo: lleva a conectarlo.
   const faltaConectar = !sinHora && !telegramConectado
-  const puedeAvisar = !sinHora && telegramConectado
+  const encendido = task.notify && !sinHora && telegramConectado
 
   const motivoHora = 'Ponele una hora y te puedo avisar'
-
   const tipTelegram = sinHora
     ? motivoHora
     : faltaConectar
       ? 'Tocá para conectar Telegram y que te avise'
-      : task.notify
-        ? 'Te aviso por Telegram. Tocá para no recibir aviso'
+      : encendido
+        ? 'Tocá para cambiar los avisos'
         : 'Tocá para que te avise por Telegram'
+
+  /** Al prender desde cero, se arranca con el aviso de la hora tildado. */
+  function alTocarTelegram() {
+    if (faltaConectar) return onAbrirConfig()
+    if (!task.notify) {
+      onCambiarAvisos(task, { notifyAtTime: true, notifyBeforeMin: null })
+    }
+    setEligiendo(true)
+  }
 
   return (
     <span className="avisos-mini" onClick={(e) => e.stopPropagation()}>
@@ -55,18 +69,43 @@ export function AvisosMini({ task, telegramConectado, onToggleAviso, onAbrirConf
         )}
       </span>
 
-      <span data-tip={tipTelegram}>
+      <span className="avisos-ancla" data-tip={eligiendo ? undefined : tipTelegram}>
         <button
           type="button"
-          className={`mini${task.notify && puedeAvisar ? ' on' : ' off'}`}
+          className={`mini${encendido ? ' on' : ' off'}`}
           disabled={sinHora}
-          aria-pressed={task.notify}
+          aria-expanded={eligiendo}
           aria-label={tipTelegram}
-          onClick={() => (faltaConectar ? onAbrirConfig() : onToggleAviso(task))}
+          onClick={alTocarTelegram}
         >
           <IconoTelegram size={17} />
         </button>
+
+        {eligiendo && (
+          <ElegirAvisos
+            task={task}
+            onCambiar={(patch) => onCambiarAvisos(task, patch)}
+            onCerrar={() => setEligiendo(false)}
+          />
+        )}
       </span>
     </span>
   )
+}
+
+/** Resumen corto de los avisos, para mostrar en la fila de la tarjeta. */
+export function resumenAvisos(task: Task): string | null {
+  if (!task.notify || !tieneAlgunAviso(task)) return null
+
+  const antes = task.notifyBeforeMin
+  const texto =
+    antes === null
+      ? 'a la hora'
+      : antes >= 1440
+        ? 'el día antes'
+        : antes >= 60
+          ? `${antes / 60} h antes`
+          : `${antes} min antes`
+
+  return task.notifyAtTime && antes !== null ? `${texto} y a la hora` : texto
 }

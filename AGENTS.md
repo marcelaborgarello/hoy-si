@@ -621,6 +621,52 @@ barra de gestos del iPhone, y `.app` lleva `padding-bottom` de sobra para que la
 > reglas CSS cargadas, no mirando el render. Falta probarlo en un teléfono de
 > verdad y con el teclado abierto (ver `docs/pendientes.md`).
 
+## 7m. Los dos avisos son independientes
+
+Antes el aviso de la hora iba **siempre** y el anticipado era un extra. Estaba
+mal: *"si ponés eso, solo va a avisar antes… tendría que poder elegir 2
+opciones. A la hora y x antes."*
+
+Ahora son **dos casillas separadas**, y se puede tener cualquier combinación:
+
+| `notifyAtTime` | `notifyBeforeMin` | Qué pasa |
+|---|---|---|
+| ☑ | `null` | un aviso, a la hora |
+| ☐ | `30` | un aviso, media hora antes **y nada a la hora** |
+| ☑ | `30` | los dos |
+| ☐ | `null` | ninguno → `notify` queda en `false` |
+
+El caso que antes no se podía: **solo el anticipado**. Sirve para algo que hay
+que preparar media hora antes y que a la hora ya no tiene sentido que suene.
+
+**Destildar las dos apaga el aviso.** No hay botón de "no avisarme" ni cartel
+que lo explique: el ícono de la tarjeta vuelve a gris, y eso ya lo dice. Un
+texto avisando sería repetir con palabras algo que se ve.
+
+`notifyAtTime` tiene default `true` en zod y se lee con `?? true` en el
+servidor, así que las tareas que ya tenían aviso siguen funcionando igual.
+
+### Se elige desde la tarjeta, no desde el detalle
+
+Esto es lo importante y costó tres repeticiones darse cuenta. **Tres veces
+seguidas apareció el mismo problema**: la hora, los botones de aviso y la
+anticipación estaban todos escondidos detrás de los tres puntitos, y no se
+encontraban. *"Sí está. En los 3 puntitos. No lo había visto."*
+
+Ahora el ícono de Telegram de la tarjeta **abre un globo con las dos casillas**.
+El detalle sigue mostrando lo mismo (el componente es el mismo, con
+`embebido`), pero dejó de ser el único camino.
+
+> **Regla:** si algo se configura por tarea, tiene que poder configurarse
+> **desde la lista**. El detalle es para profundizar, no para esconder.
+
+> **Detalle técnico que costó un rato:** el globo se cerraba al tildar una
+> casilla. Era el detector de "click afuera" hecho con `mousedown` en el
+> documento preguntando `ref.contains(target)`. Se reemplazó por una **capa
+> transparente** (`.pop-tapa`) detrás del globo: lo que la toca está afuera, y
+> punto — sin ambigüedad. Y la tarjeta con el globo abierto se eleva con
+> `.card:has(.avisos-pop)`, porque si no las tarjetas de abajo lo tapaban.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés

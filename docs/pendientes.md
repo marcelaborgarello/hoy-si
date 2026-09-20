@@ -11,7 +11,21 @@ Escrito el **2026-09-20**. Si algo se hace, se tacha acá y se registra en `AGEN
 ## Primero a hacer cuando leas pendientes. Poner un link en telegram a la tarea de ser posible
 -- Cuando me llega el telegram, que pueda abrir el link para ir a la app. Ahí ya vería la tarea
 
-## Ver que pueda poner 2 alertas. El de la hora exacta llega bien. Falta si quiero que me avise antes. Una vez completada, borrar estas líneas.
+## ~~Ver que pueda poner 2 alertas~~ ✅ Hecho el 2026-09-20
+
+No era un bug: el selector existía, pero **escondido en los tres puntitos**.
+*"Sí está. En los 3 puntitos. No lo había visto."* — tercera vez que pasaba lo
+mismo.
+
+Ahora el ícono de Telegram de **la tarjeta** abre un globo con **dos casillas
+independientes**: "A la hora" y "Antes (X)". Se pueden tildar las dos, una, o
+ninguna — y destildar las dos apaga el aviso.
+
+Lo que antes no se podía y ahora sí: **solo el aviso anticipado**, sin el de la
+hora. Ver punto 7m de `AGENTS.md`.
+
+- [ ] **Falta probarlo de punta a punta**: que lleguen los dos mensajes de
+      verdad. Se verificó la interfaz y que se guarda, no el envío.
 
 ## Notificaciones en la misma app. Ver. 
 (Estoy lo voy agregando mientras Claude se reestablece)

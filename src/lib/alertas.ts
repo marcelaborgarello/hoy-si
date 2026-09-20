@@ -39,17 +39,31 @@ export function puedeTenerAlerta(task: Task): boolean {
   return Boolean(task.dueDate && task.dueTime)
 }
 
-/** Los momentos en que hay que avisar de una tarea, de más temprano a más tarde. */
-export function momentosDeAviso(task: Pick<Task, 'dueDate' | 'dueTime' | 'notifyBeforeMin'>): number[] {
+/**
+ * Los momentos en que hay que avisar de una tarea, de más temprano a más tarde.
+ *
+ * Los dos avisos son independientes: puede haber solo el anticipado, solo el
+ * de la hora, o los dos. Si no hay ninguno, la lista vuelve vacía.
+ */
+export function momentosDeAviso(
+  task: Pick<Task, 'dueDate' | 'dueTime' | 'notifyAtTime' | 'notifyBeforeMin'>,
+): number[] {
   if (!task.dueDate || !task.dueTime) return []
 
   const exacto = dueMoment(task.dueDate, task.dueTime)
-  const momentos = [exacto]
+  const momentos: number[] = []
 
-  if (task.notifyBeforeMin) {
-    momentos.unshift(exacto - task.notifyBeforeMin * 60_000)
-  }
+  if (task.notifyBeforeMin) momentos.push(exacto - task.notifyBeforeMin * 60_000)
+  if (task.notifyAtTime) momentos.push(exacto)
+
   return momentos
+}
+
+/** Si la tarea tiene al menos un aviso elegido. Destildar los dos = apagado. */
+export function tieneAlgunAviso(
+  task: Pick<Task, 'notifyAtTime' | 'notifyBeforeMin'>,
+): boolean {
+  return task.notifyAtTime || task.notifyBeforeMin !== null
 }
 
 /**
@@ -60,7 +74,10 @@ export function momentosDeAviso(task: Pick<Task, 'dueDate' | 'dueTime' | 'notify
  * null y el servidor deja de verla.
  */
 export function proximoAviso(
-  task: Pick<Task, 'dueDate' | 'dueTime' | 'notify' | 'notifyBeforeMin' | 'status'>,
+  task: Pick<
+    Task,
+    'dueDate' | 'dueTime' | 'notify' | 'notifyAtTime' | 'notifyBeforeMin' | 'status'
+  >,
   desde = Date.now(),
 ): number | null {
   if (!task.notify || task.status === 'done') return null

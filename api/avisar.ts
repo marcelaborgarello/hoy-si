@@ -31,6 +31,7 @@ type TareaDoc = {
   dueDate?: string | null
   dueTime?: string | null
   notify?: boolean
+  notifyAtTime?: boolean
   notifyBeforeMin?: number | null
   nextNotifyAt?: number | null
   status?: string
@@ -51,7 +52,13 @@ function proximoAviso(t: TareaDoc, desde: number): number | null {
   if (!t.notify || t.status === 'done' || !t.dueDate || !t.dueTime) return null
 
   const exacto = momentoExacto(t.dueDate, t.dueTime)
-  const momentos = t.notifyBeforeMin ? [exacto - t.notifyBeforeMin * 60_000, exacto] : [exacto]
+
+  // Los dos avisos son independientes: puede haber solo el anticipado, solo
+  // el de la hora, o los dos. Las tareas viejas no tienen notifyAtTime, y
+  // para esas el de la hora va (que es como venían funcionando).
+  const momentos: number[] = []
+  if (t.notifyBeforeMin) momentos.push(exacto - t.notifyBeforeMin * 60_000)
+  if (t.notifyAtTime ?? true) momentos.push(exacto)
 
   return momentos.find((m) => m > desde) ?? null
 }
