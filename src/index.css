@@ -874,7 +874,29 @@ button {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+}
+
+.btn.alerta svg,
+.btn.primary svg {
+  flex-shrink: 0;
+}
+
+.btn.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn.alerta .tilde {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* En el alta son informativos: no invitan a hacer clic. */
+.alertas span.btn.alerta {
+  cursor: default;
 }
 
 /**

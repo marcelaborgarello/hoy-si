@@ -465,6 +465,40 @@ El link resuelve lo mismo para este caso.
    Wrangler. **Nunca en el cliente** (punto 7e).
 5. Marcar la tarea como "ya avisada" para no mandar el mismo aviso en loop.
 
+## 7i. La carpeta `api/` también se chequea
+
+Un bug de producción salió de acá: `api/` **no estaba incluida en ningún
+tsconfig**, así que TypeScript no la miraba. Un import relativo sin extensión
+(`'./_firebase'`) compilaba sin quejarse y después Vercel devolvía
+`FUNCTION_INVOCATION_FAILED` sin ninguna pista, porque el módulo ni cargaba.
+
+Ahora existe **`tsconfig.api.json`** con `module`/`moduleResolution` en
+**NodeNext**, referenciado desde `tsconfig.json`. Con eso, ese mismo import es
+un error de compilación (`TS2835`) y `bun run build` falla antes de desplegar.
+Está verificado: se rompió a propósito y el build lo atrapó.
+
+> **Regla: en `api/` los imports relativos llevan `.js`**, aunque el archivo
+> sea `.ts`. Es ESM (`"type": "module"`), y Node no resuelve sin extensión.
+
+Pista para depurar esto en el futuro: `/api/log` seguía funcionando porque es
+la única función que **no importa ningún archivo propio**. Si una función
+muere y otra no, mirar los imports relativos antes que cualquier otra cosa.
+
+## 7j. Avisos: dónde se ven y cómo
+
+Los mismos dos avisos aparecen en **el alta y en el detalle**, con el
+componente `Avisos.tsx` para que no se desincronicen.
+
+- En el **alta** son informativos (`soloInforma`): la tarea todavía no existe.
+  Están para que se entienda, mientras la escribís, que **poner hora es lo que
+  habilita los avisos**.
+- En el **detalle** el de Calendar es un link real al evento.
+- Apagados muestran el motivo exacto: falta la hora, o falta conectar Telegram.
+
+**Marcas oficiales** en `components/iconos.tsx`, dibujadas como SVG: el avión
+de Telegram sobre el degradé celeste y el calendario de Google. Nada de emoji
+haciendo de logo.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '../types/task'
 import { linkGoogleCalendar, puedeTenerAlerta } from '../lib/alertas'
+import { Avisos } from './Avisos'
 import { daysSince, formatDateTime, formatDueDate, formatDuration, todayKey } from '../lib/time'
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   onRemove: (id: string) => void
   onAddNote: (task: Task, text: string) => void
   onRemoveNote: (task: Task, noteId: string) => void
+  telegramConectado: boolean
 }
 
 export function TaskDetail({
@@ -25,6 +27,7 @@ export function TaskDetail({
   onRemove,
   onAddNote,
   onRemoveNote,
+  telegramConectado,
 }: Props) {
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description)
@@ -188,34 +191,11 @@ export function TaskDetail({
             <h3>Avisame</h3>
             {/* Sin hora no hay alerta posible, y hay que explicar por qué en vez
                 de mostrar un botón que no hace nada. */}
-            <div
-              className="alertas"
-              data-tip={
-                sinHora ? 'Para que te avise, primero ponele una hora acá arriba' : undefined
-              }
-            >
-              <a
-                className={`btn alerta${sinHora ? ' off' : ''}`}
-                href={linkCalendar ?? undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-disabled={sinHora}
-                onClick={(e) => {
-                  if (sinHora) e.preventDefault()
-                }}
-              >
-                📅 Google Calendar
-              </a>
-
-              <button
-                className="btn alerta off"
-                type="button"
-                disabled
-                data-tip="Todavía no está conectado Telegram"
-              >
-                ✈️ Telegram
-              </button>
-            </div>
+            <Avisos
+              linkCalendar={linkCalendar}
+              telegramConectado={telegramConectado}
+              sinHora={sinHora}
+            />
           </section>
 
           <section className="section">

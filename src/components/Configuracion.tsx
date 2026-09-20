@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useConfig } from '../hooks/useConfig'
+import type { useConfig } from '../hooks/useConfig'
+import { IconoTelegram } from './iconos'
 
 type Props = {
-  uid: string | null
+  /** Viene de App: una sola suscripción para toda la pantalla. */
+  config: ReturnType<typeof useConfig>
   onClose: () => void
 }
 
-export function Configuracion({ uid, onClose }: Props) {
-  const { config, cargando, crearLinkDeConexion, desconectar } = useConfig(uid)
+export function Configuracion({ config: cfg, onClose }: Props) {
+  const { config, cargando, crearLinkDeConexion, desconectar } = cfg
   const [abriendo, setAbriendo] = useState(false)
 
   useEffect(() => {
@@ -66,7 +68,8 @@ export function Configuracion({ uid, onClose }: Props) {
                   Es un toque: se abre el chat del bot y tocás <b>Empezar</b>.
                 </p>
                 <button className="btn primary" onClick={() => void conectar()} disabled={abriendo}>
-                  {abriendo ? 'Abriendo…' : '✈️ Conectar Telegram'}
+                  <IconoTelegram size={17} />
+                  {abriendo ? 'Abriendo…' : 'Conectar Telegram'}
                 </button>
                 <p className="ayuda chico">
                   No hace falta que des tu número ni tu usuario. Si no se abre, revisá que el

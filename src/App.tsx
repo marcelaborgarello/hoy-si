@@ -6,6 +6,7 @@ import { TaskCard } from './components/TaskCard'
 import { TaskDetail } from './components/TaskDetail'
 import { TaskForm } from './components/TaskForm'
 import { useAuth } from './hooks/useAuth'
+import { useConfig } from './hooks/useConfig'
 import { useTasks } from './hooks/useTasks'
 import { agrupar } from './lib/agenda'
 import { celebrationMessage, computeStats, nudge } from './lib/motivation'
@@ -61,6 +62,10 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
     addNote,
     removeNote,
   } = useTasks(auth.user?.uid ?? null)
+
+  // Una sola suscripción a la configuración, compartida por toda la pantalla.
+  const configAvisos = useConfig(auth.user?.uid ?? null)
+  const telegramConectado = Boolean(configAvisos.config.telegramChatId)
 
   const [filter, setFilter] = useState<Filter>('abiertas')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -171,7 +176,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
         <div className="nudge">👉 {nudge(stats)}</div>
       )}
 
-      <TaskForm onAdd={add} />
+      <TaskForm onAdd={add} telegramConectado={telegramConectado} />
 
       <div className="filters">
         {FILTROS.map((f) => (
@@ -236,11 +241,12 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
           onRemove={(id) => void remove(id)}
           onAddNote={(task, text) => void addNote(task, text)}
           onRemoveNote={(task, noteId) => void removeNote(task, noteId)}
+          telegramConectado={telegramConectado}
         />
       )}
 
       {verConfig && (
-        <Configuracion uid={auth.user?.uid ?? null} onClose={() => setVerConfig(false)} />
+        <Configuracion config={configAvisos} onClose={() => setVerConfig(false)} />
       )}
 
       {party && <Celebration key={party} message={party} onDone={() => setParty(null)} />}

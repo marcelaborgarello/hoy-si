@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import type { NewTask } from '../types/task'
 import { todayKey } from '../lib/time'
+import { Avisos } from './Avisos'
 
 type Props = {
   /** Devuelve false si no se pudo guardar: ahí no borramos lo escrito. */
   onAdd: (input: NewTask) => Promise<boolean>
+  telegramConectado: boolean
 }
 
-export function TaskForm({ onAdd }: Props) {
+export function TaskForm({ onAdd, telegramConectado }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
@@ -112,6 +114,17 @@ export function TaskForm({ onAdd }: Props) {
             📅 Ponerle fecha y hora
           </button>
         )}
+        {/* Se ven desde el alta para que quede claro, mientras la escribís,
+            que poner hora es lo que habilita los avisos. */}
+        {expanded && (
+          <Avisos
+            linkCalendar={null}
+            telegramConectado={telegramConectado}
+            sinHora={!dueDate || !dueTime}
+            soloInforma
+          />
+        )}
+
         <button className="btn primary" type="submit" disabled={!canSubmit || saving}>
           {saving ? 'Guardando…' : 'Anotar'}
         </button>
