@@ -78,6 +78,47 @@ borrando datos del navegador.
 
 ---
 
+## 2b. El header: está todo inline
+
+Tres cosas que aparecieron juntas el **2026-09-20** y son la misma pasada, porque
+las tres son el mismo pedazo de pantalla.
+
+**a) Menú hamburguesa.** Hoy está todo inline, uno al lado del otro. Ahí adentro
+van a vivir el selector de tema del punto 2, el nombre, salir y la configuración
+de Telegram — así que **conviene hacerlo antes que el selector de tema**, o hay
+que ubicarlo dos veces.
+
+- [ ] Menú hamburguesa con lo que hoy está suelto en el header.
+- [ ] Decidir si en pantalla grande sigue inline o también va al menú. (Si se
+      hace mobile first primero, esta respuesta sale sola.)
+
+**b) Elegir qué nombre mostrar.** Hoy muestra el que trae Google. Poder poner el
+que una quiera.
+
+- [ ] Campo para el nombre propio, con el de Google como valor inicial.
+- [ ] Decidir **dónde se guarda**, que es lo único con costo: en Firestore viaja
+      entre dispositivos pero hay que volver a tocar las reglas (recién
+      arregladas, punto 4); en el navegador es gratis pero no te sigue al
+      celular. Anotado, sin decidir.
+
+**c) Sacar el cartelito de "Guardado en la nube".**
+
+> ⚠️ **Confirmar primero de qué hablamos.** Lo anoté entendiendo que es **el
+> cartelito de arriba a la derecha**, no el guardado en la nube en sí (o sea, no
+> es sacar Firestore). Si era lo otro, corregir esto antes de tocar nada.
+
+Y si es el cartelito, ojo con la regla del punto 7b de `AGENTS.md`: **el badge no
+puede mentir**. Existe justamente para avisarte cuando tus cosas **no** se están
+guardando. Borrarlo del todo te deja sin ese aviso.
+
+La salida que cumple las dos cosas: **que aparezca solo cuando hay un problema**
+y no se vea nunca cuando todo anda bien. Silencio = está guardado. Así se va el
+ruido de la pantalla sin perder la advertencia.
+
+- [ ] Que el estado de guardado se muestre solo cuando falla.
+
+---
+
 ## 3. Convertirla en PWA
 
 **Respuesta corta: sí se puede, y es de las cosas más baratas que quedan por hacer.**

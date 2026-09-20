@@ -15,6 +15,7 @@ type Props = {
   onAddNote: (task: Task, text: string) => void
   onRemoveNote: (task: Task, noteId: string) => void
   telegramConectado: boolean
+  onToggleAviso: (task: Task) => void
 }
 
 export function TaskDetail({
@@ -28,6 +29,7 @@ export function TaskDetail({
   onAddNote,
   onRemoveNote,
   telegramConectado,
+  onToggleAviso,
 }: Props) {
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description)
@@ -195,6 +197,10 @@ export function TaskDetail({
               linkCalendar={linkCalendar}
               telegramConectado={telegramConectado}
               sinHora={sinHora}
+              notify={task.notify}
+              notifyBeforeMin={task.notifyBeforeMin}
+              onToggleNotify={() => onToggleAviso(task)}
+              onChangeAnticipacion={(min) => onEdit(task.id, { notifyBeforeMin: min })}
             />
           </section>
 

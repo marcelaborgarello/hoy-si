@@ -15,6 +15,9 @@ export function buildTask(input: NewTask): Omit<Task, 'id'> {
     finishedAt: null,
     dueDate: input.dueDate ?? null,
     dueTime: input.dueDate ? (input.dueTime ?? null) : null,
+    // Sin hora no puede haber aviso, así que ni se enciende.
+    notify: Boolean(input.dueTime) && (input.notify ?? false),
+    notifyBeforeMin: input.notifyBeforeMin ?? null,
     notes: [],
   }
 }

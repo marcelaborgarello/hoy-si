@@ -70,6 +70,11 @@ service cloud.firestore {
       && (d.get('finishedAt', null) == null || d.get('finishedAt', null) is number)
       && (d.get('dueDate', null) == null || d.get('dueDate', null) is string)
       && (d.get('dueTime', null) == null || d.get('dueTime', null) is string)
+      && d.get('notify', false) is bool
+      && (d.get('notifyBeforeMin', null) == null
+          || (d.get('notifyBeforeMin', null) is int
+              && d.get('notifyBeforeMin', 0) >= 0
+              && d.get('notifyBeforeMin', 0) <= 10080))
       && d.get('notes', []) is list
       && d.get('notes', []).size() <= 200;
   }

@@ -28,6 +28,20 @@ export const TaskSchema = z.object({
    * existiera, sigan entrando sin romper nada.
    */
   dueTime: z.string().nullable().default(null),
+  /**
+   * Si hay que avisar por Telegram a la hora de la tarea.
+   *
+   * Arranca APAGADO a propósito: tener hora significa que está agendada, no
+   * que quieras que te suene el teléfono. Muchas veces se agenda algo solo
+   * para revisarlo.
+   */
+  notify: z.boolean().default(false),
+  /**
+   * Minutos de anticipación para un SEGUNDO aviso, además del de la hora.
+   * null = solo avisa a la hora. Lo elige la persona por tarea, porque un
+   * turno médico y sacar la basura no se avisan con la misma anticipación.
+   */
+  notifyBeforeMin: z.number().nullable().default(null),
   notes: z.array(NoteSchema).default([]),
 })
 
@@ -41,6 +55,8 @@ export type NewTask = {
   description?: string
   dueDate?: string | null
   dueTime?: string | null
+  notify?: boolean
+  notifyBeforeMin?: number | null
 }
 
 /** Parsea una tarea que viene de afuera (localStorage o Firestore) sin romper la app. */

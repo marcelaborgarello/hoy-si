@@ -7,6 +7,7 @@ type Props = {
   onToggle: (task: Task) => void
   onStart: (task: Task) => void
   onOpen: (task: Task) => void
+  onToggleAviso: (task: Task) => void
   telegramConectado: boolean
 }
 
@@ -47,7 +48,14 @@ function metaPills(task: Task) {
   return pills
 }
 
-export function TaskCard({ task, onToggle, onStart, onOpen, telegramConectado }: Props) {
+export function TaskCard({
+  task,
+  onToggle,
+  onStart,
+  onOpen,
+  onToggleAviso,
+  telegramConectado,
+}: Props) {
   const vencida =
     task.dueDate !== null &&
     task.status !== 'done' &&
@@ -98,7 +106,11 @@ export function TaskCard({ task, onToggle, onStart, onOpen, telegramConectado }:
         {/* Los avisos se ven acá, en la tarjeta: no hay que abrir el detalle
             para saber si esta tarea te va a avisar o no. */}
         {task.status !== 'done' && (
-          <AvisosMini task={task} telegramConectado={telegramConectado} />
+          <AvisosMini
+            task={task}
+            telegramConectado={telegramConectado}
+            onToggleAviso={onToggleAviso}
+          />
         )}
 
         {task.status === 'todo' && (

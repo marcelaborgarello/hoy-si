@@ -49,7 +49,7 @@ export function TaskForm({ onAdd, telegramConectado }: Props) {
     >
       <input
         className="field title"
-        placeholder="¿Qué venís pateando?"
+        placeholder="¿Qué hay que hacer?"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onFocus={() => setExpanded(true)}

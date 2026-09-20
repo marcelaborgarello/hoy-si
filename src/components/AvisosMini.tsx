@@ -5,25 +5,33 @@ import { IconoCalendar, IconoTelegram } from './iconos'
 type Props = {
   task: Task
   telegramConectado: boolean
+  onToggleAviso: (task: Task) => void
 }
 
 /**
  * Los dos avisos dentro de la tarjeta, solo con el logo.
  *
- * Es la misma idea que la sección "Avisame" del detalle, pero del tamaño que
- * tolera una fila de la lista: sin texto, apoyándose en el logo y el tooltip.
- * Está acá porque tener que abrir el detalle para saber si una tarea te va a
- * avisar es justo lo que hay que evitar.
+ * El de Telegram es un interruptor: tener hora significa que la tarea está
+ * agendada, no que tenga que sonar el teléfono. Se enciende a propósito, por
+ * tarea. El de Calendar es un link.
  */
-export function AvisosMini({ task, telegramConectado }: Props) {
+export function AvisosMini({ task, telegramConectado, onToggleAviso }: Props) {
   const sinHora = !puedeTenerAlerta(task)
   const link = linkGoogleCalendar(task)
-  const telegramOff = sinHora || !telegramConectado
+  const puedeAvisar = !sinHora && telegramConectado
 
   const motivoHora = 'Ponele una hora y te puedo avisar'
 
+  const tipTelegram = sinHora
+    ? motivoHora
+    : !telegramConectado
+      ? 'Conectá Telegram en Configuración'
+      : task.notify
+        ? 'Te aviso por Telegram. Tocá para no recibir aviso'
+        : 'Tocá para que te avise por Telegram'
+
   return (
-    <span className="avisos-mini">
+    <span className="avisos-mini" onClick={(e) => e.stopPropagation()}>
       <span data-tip={sinHora ? motivoHora : 'Agendar en Google Calendar'}>
         {link ? (
           <a
@@ -32,7 +40,6 @@ export function AvisosMini({ task, telegramConectado }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Agendar en Google Calendar"
-            onClick={(e) => e.stopPropagation()}
           >
             <IconoCalendar size={17} />
           </a>
@@ -43,18 +50,17 @@ export function AvisosMini({ task, telegramConectado }: Props) {
         )}
       </span>
 
-      <span
-        data-tip={
-          sinHora
-            ? motivoHora
-            : telegramConectado
-              ? 'Te aviso por Telegram'
-              : 'Conectá Telegram en Configuración'
-        }
-      >
-        <span className={`mini${telegramOff ? ' off' : ''}`} aria-hidden="true">
+      <span data-tip={tipTelegram}>
+        <button
+          type="button"
+          className={`mini${task.notify && puedeAvisar ? ' on' : ' off'}`}
+          disabled={!puedeAvisar}
+          aria-pressed={task.notify}
+          aria-label={tipTelegram}
+          onClick={() => onToggleAviso(task)}
+        >
           <IconoTelegram size={17} />
-        </span>
+        </button>
       </span>
     </span>
   )

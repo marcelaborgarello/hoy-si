@@ -113,6 +113,16 @@ export function useTasks(uid: string | null) {
 
       edit: (id: string, patch: Partial<Omit<Task, 'id'>>) => run(store.update(id, patch)),
 
+      /** Prende o apaga el aviso de una tarea. Al apagarlo se olvida también
+       *  la anticipación, para no dejar un valor colgado que nadie ve. */
+      toggleAviso: (task: Task) =>
+        run(
+          store.update(task.id, {
+            notify: !task.notify,
+            ...(task.notify ? { notifyBeforeMin: null } : {}),
+          }),
+        ),
+
       remove: (id: string) => run(store.remove(id)),
 
       addNote: (task: Task, text: string) => {
