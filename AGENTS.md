@@ -468,7 +468,8 @@ orden de los bloques es fijo para que la pantalla no se reacomode sola:
 2. **Se pasaron** — lo vencido, en ámbar.
 3. **Hoy** · 4. **Mañana** · 5. los días siguientes, en orden cronológico
    (posición = `FUTURO + días que faltan`).
-6. **Sin fecha** — al final, para que no compita con lo que sí está agendado.
+6. ~~**Sin fecha**~~ — ya no está acá: desde el 2026-09-21 las tareas sin fecha
+   viven en **otra lista** (ver punto 7o).
 7. **Terminadas** — último, y agrupadas por el día en que se tacharon.
 
 Dentro de cada día: **primero lo que tiene hora**, en orden; lo demás va al
@@ -738,6 +739,79 @@ Ahora las dos salen de variables:
 > copia al navegador. Por eso una sola carga de la pública sirve para los dos
 > lados. Y por eso la privada sin prefijo le llega igual a la función.
 
+## 7o. Dos listas: Agenda y Sin agendar (2026-09-21)
+
+Pedido: *"necesito hacer lista de tareas sin agendar… si no las sin fechas se
+van abajo del todo. Y si tengo muchas es poco práctico"*. Y el uso real, que es
+lo que define todo lo demás: *"la idea es hacer lista de los miles de
+pendientes y después decir, bue, esto lo voy a poner para hacer tal día. Y si
+quiero lo pongo hora"*.
+
+O sea que son **dos momentos distintos**: volcar todo sin pensar en cuándo, y
+después repartir los días. El bloque "Sin fecha" al final de la agenda servía
+mientras fueran tres; con treinta queda enterrado y deja de existir.
+
+**La regla que decide todo es una sola línea**, en `esSuelta()` de
+`src/lib/agenda.ts`:
+
+```ts
+task.status === 'todo' && !task.dueDate
+```
+
+Las dos excepciones las eligió la dueña del proyecto, y las dos tienen motivo:
+
+| Caso | Dónde va | Por qué |
+|---|---|---|
+| Sin fecha, **en curso** | Agenda, arriba de todo | Lo que estás haciendo ahora va primero. Es el "una cosa por vez" del punto 1. |
+| Sin fecha, **terminada** | Agenda, en el día que la tachaste | Ese día **es** una fecha. Y deja "Sin agendar" como lo que tiene que ser: solo lo que falta hacer. |
+
+### Los nombres
+
+**"Agenda" y "Sin agendar"**, no "Con fecha / Sin fecha". Comparten raíz, así
+que se leen como dos caras de lo mismo. Y "Agenda" es el nombre de un **lugar**,
+no una afirmación sobre cada tarea de adentro: por las dos excepciones de arriba
+ahí conviven cosas sin fecha, y un título que dijera "Con fecha" estaría
+mintiendo. El badge que miente es un error viejo de este proyecto (punto 7b).
+
+### Lo que se decidió alrededor
+
+- **Los cinco chips de filtro se ven solo en la Agenda.** En "Sin agendar" todo
+  es pendiente y sin fecha: cuatro de los cinco darían siempre vacío o lo mismo.
+- **Sus números cuentan solo la agenda.** Si contaran todo, el chip diría un
+  número y la lista mostraría otro.
+- **"Sin agendar" ordena por antigüedad, las más viejas arriba.** Mismo criterio
+  que la antigüedad en ámbar: lo que venís pateando hace rato queda a la vista.
+- **La solapa elegida no se guarda**: al abrir siempre arranca en Agenda.
+  Recordarla implicaría persistir algo nuevo en el navegador, y eso se pregunta
+  (punto 7e).
+
+### Que una tarea cambie de lista no puede ser mudo
+
+Tres acciones mueven una tarea de lista, y en las tres **la tarjeta desaparece
+de la pantalla**. Sin avisar, se lee como que se borró:
+
+| Acción | Qué pasa |
+|---|---|
+| Anotar sin fecha estando en la Agenda | La pantalla **cambia sola** a "Sin agendar" (y al revés). Lo que acabás de escribir nunca queda fuera de vista. |
+| Ponerle fecha desde la lista | Cartel: *"X quedó para el 23 de sept a las 18:30"*, con **Ver la agenda**. |
+| Tocar **Empecé** en una sin fecha | Cartel: *"X pasó a la agenda: la estás haciendo"*. |
+
+Es la misma regla de siempre: ninguna acción del usuario termina sin feedback
+(punto 7 de `CLAUDE.md`).
+
+### El globo de fecha (`PonerFecha.tsx`)
+
+Ponerle fecha se hace **desde la tarjeta**, no desde el detalle: es la regla del
+punto 7m, y acá es lo que hace que el repaso ("esto lo hago el martes") sea de
+un toque en vez de tres.
+
+> **Nada se guarda mientras elegís: recién al tocar "Agendar".** Si se guardara
+> al cambiar el día, la tarea saltaría a la agenda en ese mismo instante, el
+> globo se iría de la pantalla con ella y no habría forma de ponerle la hora.
+
+El botón solo aparece en tareas **sin fecha**; si ya tiene día, se cambia en el
+detalle como siempre. Reusa la capa `.pop-tapa` del globo de avisos.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés
@@ -770,6 +844,14 @@ No están hechas. Si se retoman, revisar primero si sirven al objetivo del punto
   un backend propio (ver punto 4b). Se decidió **Auth con Google + reglas por
   uid**. Los datos se movieron a `users/{uid}/tasks`, el store pasó a crearse por
   usuario y se agregó validación de forma en las reglas.
+
+- **2026-09-21** — La lista se partió en dos: **Agenda** y **Sin agendar**
+  (punto 7o), con el botón 📅 para ponerle fecha desde la tarjeta misma.
+  Verificado en el navegador contra la base real: anotar sin fecha cambia solo
+  de solapa, agendar mueve la tarea al día correcto (bloque "Miércoles, 23 de
+  septiembre") y *Empecé* la manda a "En curso" con su cartel. Las dos tareas
+  de prueba se borraron. **Sin verificar: el render en pantalla chica** — la
+  ventana del navegador no se dejó achicar, igual que la vez anterior.
 
 - **2026-09-19** — El login con Google quedó funcionando (verificado en el
   navegador: sesión iniciada y nombre en el header). Se reescribió todo el copy

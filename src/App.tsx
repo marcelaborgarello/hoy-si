@@ -10,11 +10,22 @@ import { TaskForm } from './components/TaskForm'
 import { useAuth } from './hooks/useAuth'
 import { useConfig } from './hooks/useConfig'
 import { useTasks } from './hooks/useTasks'
-import { agrupar } from './lib/agenda'
+import { agrupar, esSuelta } from './lib/agenda'
 import { celebrationMessage, computeStats, nudge } from './lib/motivation'
-import type { Status, Task } from './types/task'
+import { formatDueDate } from './lib/time'
+import type { NewTask, Status, Task } from './types/task'
 
 type Filter = 'abiertas' | 'todo' | 'doing' | 'done' | 'todas'
+
+/**
+ * Dos listas separadas, no una sola con las sin fecha al final.
+ *
+ * Antes todo convivía en la agenda y lo que no tenía día quedaba en el último
+ * bloque: con pocas cosas se leía, con muchas quedaba enterrado y dejaba de
+ * existir. Y son dos momentos distintos: volcar todo lo pendiente sin pensar
+ * en cuándo, y después decidir qué día se hace cada cosa.
+ */
+type Vista = 'agenda' | 'sueltas'
 
 const FILTROS: { key: Filter; label: string }[] = [
   { key: 'abiertas', label: 'Abiertas' },
@@ -74,29 +85,83 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
   const nombreAMostrar =
     configAvisos.nombre || auth.user?.displayName || auth.user?.email || 'vos'
 
+  const [vista, setVista] = useState<Vista>('agenda')
   const [filter, setFilter] = useState<Filter>('abiertas')
   const [openId, setOpenId] = useState<string | null>(null)
   const [party, setParty] = useState<string | null>(null)
   const [verConfig, setVerConfig] = useState(false)
+  /**
+   * Cuando una tarea cambia de lista, la tarjeta desaparece de la pantalla.
+   * Este cartel dice a dónde se fue: sin él parece que se borró.
+   */
+  const [seFueALaAgenda, setSeFueALaAgenda] = useState<string | null>(null)
 
   const stats = useMemo(() => computeStats(tasks), [tasks])
 
-  // La lista se muestra como agenda: bloques por día, en orden cronológico.
+  // Cada tarea vive en una sola solapa. La regla está en lib/agenda.ts.
+  const { deAgenda, sueltas } = useMemo(() => {
+    const sueltas = tasks.filter(esSuelta)
+    // Las más viejas arriba: lo que venís pateando hace rato queda a la vista,
+    // no enterrado abajo. Es el mismo criterio que la antigüedad en ámbar.
+    sueltas.sort((a, b) => a.createdAt - b.createdAt)
+    return { deAgenda: tasks.filter((t) => !esSuelta(t)), sueltas }
+  }, [tasks])
+
+  // La agenda se muestra en bloques por día, en orden cronológico.
   const grupos = useMemo(
-    () => agrupar(tasks.filter((t) => matches(t, filter))),
-    [tasks, filter],
+    () => agrupar(deAgenda.filter((t) => matches(t, filter))),
+    [deAgenda, filter],
   )
 
-  const hayAlgo = grupos.length > 0
+  const hayAlgo = vista === 'agenda' ? grupos.length > 0 : sueltas.length > 0
 
   const abierta = openId ? (tasks.find((t) => t.id === openId) ?? null) : null
 
+  // Los números de los filtros cuentan solo la agenda, que es donde se ven.
+  // Si contaran todo, dirían un número y la lista mostraría otro.
   const counts: Record<Filter, number> = {
-    abiertas: stats.pending + stats.doing,
-    todo: stats.pending,
+    abiertas: deAgenda.filter((t) => t.status !== 'done').length,
+    todo: deAgenda.filter((t) => t.status === 'todo').length,
     doing: stats.doing,
     done: stats.done,
-    todas: stats.total,
+    todas: deAgenda.length,
+  }
+
+  /**
+   * Anotar no puede hacer desaparecer lo que acabás de escribir: si la tarea
+   * nace en la otra solapa, la pantalla se va con ella.
+   */
+  async function anotar(input: NewTask): Promise<boolean> {
+    const ok = await add(input)
+    if (ok) {
+      setVista(input.dueDate ? 'agenda' : 'sueltas')
+      setSeFueALaAgenda(null)
+    }
+    return ok
+  }
+
+  /** Ponerle fecha desde la lista la saca de "Sin agendar" y la deja en el día. */
+  async function ponerFecha(task: Task, patch: { dueDate: string; dueTime: string | null }) {
+    const ok = await edit(task, patch)
+    if (ok) {
+      setSeFueALaAgenda(
+        `📅 “${task.title}” quedó para el ${formatDueDate(patch.dueDate)}` +
+          (patch.dueTime ? ` a las ${patch.dueTime}` : ''),
+      )
+    }
+  }
+
+  /**
+   * Arrancar una tarea sin fecha también la manda a la agenda, arriba de todo.
+   * Es una decisión tomada (lo que estás haciendo va primero), pero desde
+   * "Sin agendar" se ve como que la tarjeta se esfumó. Así que se avisa.
+   */
+  async function empezar(task: Task) {
+    const eraSuelta = esSuelta(task)
+    const ok = await start(task)
+    if (ok && eraSuelta) {
+      setSeFueALaAgenda(`▶ “${task.title}” pasó a la agenda: la estás haciendo.`)
+    }
   }
 
   function celebrar(task: Task) {
@@ -115,6 +180,43 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
     }
     if (await finish(task)) celebrar(task)
   }
+
+  function cambiarVista(cuál: Vista) {
+    setVista(cuál)
+    // El cartel de "quedó para el martes" ya cumplió: su trabajo era decir a
+    // dónde se fue la tarea que desapareció de la lista.
+    setSeFueALaAgenda(null)
+  }
+
+  // Las mismas para las dos listas, así no se desincronizan.
+  const accionesDeTarjeta = {
+    onToggle: (t: Task) => void toggle(t),
+    onStart: (t: Task) => void empezar(t),
+    onOpen: (t: Task) => setOpenId(t.id),
+    onCambiarAvisos: (t: Task, patch: { notifyAtTime: boolean; notifyBeforeMin: number | null }) =>
+      void cambiarAvisos(t, patch),
+    onPonerFecha: (t: Task, patch: { dueDate: string; dueTime: string | null }) =>
+      void ponerFecha(t, patch),
+    onAbrirConfig: () => setVerConfig(true),
+    telegramConectado,
+  }
+
+  /** Qué decir cuando la lista que estás mirando está vacía. */
+  const vacío =
+    tasks.length === 0
+      ? { icono: '🌵', texto: 'No hay nada acá. Anotá esa cosa que venís postergando.' }
+      : vista === 'sueltas'
+        ? { icono: '✨', texto: 'Nada suelto: todo lo que anotaste ya tiene día.' }
+        : filter === 'done'
+          ? { icono: '🫥', texto: 'Todavía no tachaste nada. La primera es la que más cuesta.' }
+          : filter !== 'abiertas'
+            ? { icono: '🌵', texto: 'Nada en este filtro. Buena señal.' }
+            : sueltas.length > 0
+              ? {
+                  icono: '🗓️',
+                  texto: `La agenda está libre. Tenés ${sueltas.length} sin agendar, por si querés darle día a alguna.`,
+                }
+              : { icono: '🌵', texto: 'La agenda está libre.' }
 
   return (
     <div className="app">
@@ -174,32 +276,72 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
         <div className="nudge">👉 {nudge(stats)}</div>
       )}
 
-      <TaskForm onAdd={add} telegramConectado={telegramConectado} />
+      <TaskForm onAdd={anotar} telegramConectado={telegramConectado} />
 
-      <div className="filters">
-        {FILTROS.map((f) => (
-          <button
-            key={f.key}
-            className="chip"
-            aria-pressed={filter === f.key}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-            <span className="count">{counts[f.key]}</span>
-          </button>
-        ))}
+      <div className="vistas" role="tablist" aria-label="Qué lista mirás">
+        <button
+          className="vista"
+          role="tab"
+          aria-selected={vista === 'agenda'}
+          onClick={() => cambiarVista('agenda')}
+        >
+          Agenda
+          <span className="count">{counts.abiertas}</span>
+        </button>
+        <button
+          className="vista"
+          role="tab"
+          aria-selected={vista === 'sueltas'}
+          onClick={() => cambiarVista('sueltas')}
+        >
+          Sin agendar
+          <span className="count">{sueltas.length}</span>
+        </button>
       </div>
+
+      {seFueALaAgenda && (
+        <div className="nudge is-ok">
+          <span>{seFueALaAgenda}</span>
+          {vista !== 'agenda' && (
+            <button className="btn ghost sm" onClick={() => cambiarVista('agenda')}>
+              Ver la agenda
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Los filtros son de la agenda: en "Sin agendar" todo es pendiente y
+          sin fecha, así que cuatro de los cinco darían siempre lo mismo. */}
+      {vista === 'agenda' && (
+        <div className="filters">
+          {FILTROS.map((f) => (
+            <button
+              key={f.key}
+              className="chip"
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+              <span className="count">{counts[f.key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="empty">Cargando…</div>
       ) : !hayAlgo ? (
         <div className="empty">
-          <div className="big">{filter === 'done' ? '🫥' : '🌵'}</div>
-          {filter === 'done'
-            ? 'Todavía no tachaste nada. La primera es la que más cuesta.'
-            : tasks.length === 0
-              ? 'No hay nada acá. Anotá esa cosa que venís postergando.'
-              : 'Nada en este filtro. Buena señal.'}
+          <div className="big">{vacío.icono}</div>
+          {vacío.texto}
+        </div>
+      ) : vista === 'sueltas' ? (
+        // Lista plana: acá no hay días que separar, y un título "Sin fecha"
+        // adentro de la solapa "Sin agendar" sería decir dos veces lo mismo.
+        <div className="list">
+          {sueltas.map((t) => (
+            <TaskCard key={t.id} task={t} {...accionesDeTarjeta} />
+          ))}
         </div>
       ) : (
         grupos.map((g) => (
@@ -211,16 +353,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
             </h2>
             <div className="list">
               {g.tasks.map((t) => (
-                <TaskCard
-                  key={t.id}
-                  task={t}
-                  onToggle={(t) => void toggle(t)}
-                  onStart={(task) => void start(task)}
-                  onOpen={(task) => setOpenId(task.id)}
-                  telegramConectado={telegramConectado}
-                  onCambiarAvisos={(t, patch) => void cambiarAvisos(t, patch)}
-                  onAbrirConfig={() => setVerConfig(true)}
-                />
+                <TaskCard key={t.id} task={t} {...accionesDeTarjeta} />
               ))}
             </div>
           </section>
@@ -233,7 +366,7 @@ function Board({ auth }: { auth: ReturnType<typeof useAuth> }) {
           task={abierta}
           onClose={() => setOpenId(null)}
           onEdit={(patch) => void edit(abierta, patch)}
-          onStart={(task) => void start(task)}
+          onStart={(task) => void empezar(task)}
           onFinish={(task) => {
             void finish(task).then((ok) => {
               if (ok) celebrar(task)

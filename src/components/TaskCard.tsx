@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { Task } from '../types/task'
 import { daysSince, dueMoment, formatDueDate, formatDuration, dueStatus } from '../lib/time'
 import { AvisosMini } from './AvisosMini'
+import { PonerFecha } from './PonerFecha'
 
 type Props = {
   task: Task
@@ -11,6 +13,8 @@ type Props = {
     task: Task,
     patch: { notifyAtTime: boolean; notifyBeforeMin: number | null },
   ) => void
+  /** Ponerle fecha desde la lista: así pasa sola a la agenda. */
+  onPonerFecha: (task: Task, patch: { dueDate: string; dueTime: string | null }) => void
   onAbrirConfig: () => void
   telegramConectado: boolean
 }
@@ -58,9 +62,15 @@ export function TaskCard({
   onStart,
   onOpen,
   onCambiarAvisos,
+  onPonerFecha,
   onAbrirConfig,
   telegramConectado,
 }: Props) {
+  const [eligiendoFecha, setEligiendoFecha] = useState(false)
+
+  // Solo donde hace falta: si ya tiene día, la fecha se cambia en el detalle.
+  const sinFecha = task.status !== 'done' && !task.dueDate
+
   const vencida =
     task.dueDate !== null &&
     task.status !== 'done' &&
@@ -108,6 +118,31 @@ export function TaskCard({
       </div>
 
       <div className="card-actions">
+        {sinFecha && (
+          <span className="fecha-ancla" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="btn ghost sm"
+              aria-expanded={eligiendoFecha}
+              onClick={() => setEligiendoFecha(true)}
+              title="Elegí el día, y la hora si querés"
+            >
+              📅 Fecha
+            </button>
+
+            {eligiendoFecha && (
+              <PonerFecha
+                task={task}
+                onGuardar={(patch) => {
+                  onPonerFecha(task, patch)
+                  setEligiendoFecha(false)
+                }}
+                onCerrar={() => setEligiendoFecha(false)}
+              />
+            )}
+          </span>
+        )}
+
         {/* Los avisos se ven acá, en la tarjeta: no hay que abrir el detalle
             para saber si esta tarea te va a avisar o no. */}
         {task.status !== 'done' && (

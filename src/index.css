@@ -633,6 +633,60 @@ button {
   min-height: 40px;
 }
 
+/* ---------- Las dos listas: agenda y sin agendar ---------- */
+/**
+ * Van juntas en un solo marco, pegadas, para que se lean como dos caras de lo
+ * mismo y no como dos botones sueltos que hacen cosas distintas.
+ */
+.vistas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-soft);
+}
+
+.vista {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  /* 44px: es lo primero que se toca al abrir la app, con el pulgar. */
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.vista[aria-selected='true'] {
+  background: var(--surface-hi);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-hi);
+}
+
+.vista .count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.vista[aria-selected='true'] .count {
+  color: var(--text-dim);
+}
+
+/* Confirmación de que la tarea se fue a la otra lista, no que se perdió. */
+.nudge.is-ok {
+  justify-content: space-between;
+}
+
 /* ---------- Filtros ---------- */
 .filters {
   display: flex;
@@ -1107,7 +1161,8 @@ button.mini:not(:disabled):hover {
 }
 
 /* ---------- Elegir los avisos ---------- */
-.avisos-ancla {
+.avisos-ancla,
+.fecha-ancla {
   position: relative;
 }
 
@@ -1116,7 +1171,8 @@ button.mini:not(:disabled):hover {
  * esto, las tarjetas siguientes se pintan encima y tapan la mitad del globo:
  * se veía la primera casilla y nada más.
  */
-.card:has(.avisos-pop) {
+.card:has(.avisos-pop),
+.card:has(.fecha-pop) {
   position: relative;
   z-index: 20;
 }
@@ -1133,7 +1189,8 @@ button.mini:not(:disabled):hover {
  * botón se salía por la izquierda y quedaba cortado, porque el botón está
  * pegado al borde derecho y el globo se extiende hacia adentro.
  */
-.avisos-pop {
+.avisos-pop,
+.fecha-pop {
   position: fixed;
   left: 12px;
   right: 12px;
@@ -1161,6 +1218,30 @@ button.mini:not(:disabled):hover {
 
 .avisos-plano {
   margin-top: 12px;
+}
+
+/* ---------- Ponerle fecha desde la lista ---------- */
+.fecha-pop-fila {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.fecha-pop-fila > span {
+  min-width: 52px;
+  color: var(--text-dim);
+}
+
+.fecha-pop-fila .dt {
+  flex: 1;
+}
+
+.fecha-pop-botones {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .avisos-pop-fila,
@@ -1558,7 +1639,8 @@ button.mini:not(:disabled):hover {
   }
 
   /* Con lugar, el globo vuelve a colgar del botón. */
-  .avisos-pop {
+  .avisos-pop,
+  .fecha-pop {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
@@ -1566,6 +1648,12 @@ button.mini:not(:disabled):hover {
     bottom: auto;
     width: max-content;
     max-width: min(300px, 88vw);
+  }
+
+  /* Un poco más ancho que el de avisos: adentro van dos campos y el pie, y
+     con menos lugar la nota de abajo se parte en dos líneas. */
+  .fecha-pop {
+    min-width: 320px;
   }
 
   /* El formulario deja de estar fijo abajo y vuelve al flujo de la página. */

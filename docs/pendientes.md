@@ -11,6 +11,21 @@ Escrito el **2026-09-20**. Si algo se hace, se tacha acá y se registra en `AGEN
 ## Primero a hacer cuando leas pendientes. Poner un link en telegram a la tarea de ser posible
 -- Cuando me llega el telegram, que pueda abrir el link para ir a la app. Ahí ya vería la tarea
 
+## ~~Separar las tareas sin fecha~~ ✅ Hecho el 2026-09-21
+
+Dos solapas: **Agenda** (lo que tiene día) y **Sin agendar** (el volcadero de
+pendientes). Se abre siempre en Agenda. Con el botón **📅 Fecha** de cada
+tarjeta se le pone día y hora desde la lista, y pasa sola a la agenda. El
+porqué de cada decisión está en el punto 7o de `AGENTS.md`.
+
+- [ ] **Verlo en pantalla chica.** ⚠️ Sin verificar: la ventana del navegador no
+      se dejó achicar (sigue maximizada), así que las solapas y el globo de
+      fecha se comprobaron en pantalla grande nada más. Es el mismo pendiente
+      del punto 1 de acá abajo.
+- [ ] Idea, no pendiente: en "Sin agendar" no hay forma de ordenar ni buscar. Si
+      la lista crece a cientos, va a hacer falta algo. Antes de agregarlo,
+      preguntarse si ayuda a **arrancar** — si no, no va.
+
 ## ~~Ver que pueda poner 2 alertas~~ ✅ Hecho el 2026-09-20
 
 No era un bug: el selector existía, pero **escondido en los tres puntitos**.

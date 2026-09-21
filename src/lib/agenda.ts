@@ -42,6 +42,21 @@ const POS = {
   HECHAS: 10000,
 }
 
+/**
+ * Una tarea está "suelta" (sin agendar) si no tiene fecha y todavía no la
+ * empezaste. Es la única regla que decide en cuál de las dos solapas se ve,
+ * y vive acá para que no se escriba distinto en dos lados.
+ *
+ * Las dos excepciones son a propósito:
+ * - **En curso**: lo que estás haciendo ahora va arriba de la agenda aunque no
+ *   tenga fecha. Es el "una cosa por vez" del punto 1 de AGENTS.md.
+ * - **Terminada**: se agrupa por el día en que la tachaste, que es una fecha.
+ *   Así la lista de sin agendar queda limpia: solo lo que falta hacer.
+ */
+export function esSuelta(task: Task): boolean {
+  return task.status === 'todo' && !task.dueDate
+}
+
 /** A qué bloque va cada tarea. */
 function clasificar(task: Task, ahora: number): Omit<Grupo, 'tasks'> {
   if (task.status === 'done') {
