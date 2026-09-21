@@ -36,20 +36,36 @@ aceptaba cualquier `uid` sin verificar.
 
 - [x] ~~Cargar `VITE_VAPID_PUBLIC_KEY` en Vercel~~ ✅ hecha y verificada en el
       JS publicado.
-- [ ] ⚠️ **`VAPID_PRIVATE_KEY` está cargada pero `web-push` la rechaza.** El
+- [ ] **Rotar el par VAPID: la privada en uso quedó en una conversación.**
+      No es urgente y conviene saber por qué: una clave VAPID **no sirve
+      sola** para mandar una notificación — hace falta además la suscripción
+      del navegador, que vive en `users/{uid}/config/push` y la protegen las
+      reglas. No es el caso del token del bot, que sí servía solo.
+      Igual conviene rotarlo mientras haya una sola suscripción.
+
+      La pública en uso empieza con `BJSOXMZ3…`. Cuando se rote, cambian las
+      **dos** variables y hay que volver a tocar "Activar los avisos" (rotar
+      invalida las suscripciones existentes).
+
+      **Cómo pasó, para no repetirlo:** se generó el par a un archivo para que
+      la privada no pasara por el chat, pero al inspeccionar ese archivo el
+      filtro escondía lo de más de 60 caracteres — y la privada mide 43, así
+      que se imprimió entera. **Si se vuelve a hacer, no se lista el archivo:
+      se confía en lo que dice el generador y listo.**
+
+- [x] ~~⚠️ **`VAPID_PRIVATE_KEY` está cargada pero `web-push` la rechaza.**~~ El
       diagnóstico del Worker decía `las claves no sirven`. Las dos variables
       existen, así que es un problema de formato, y no es un espacio (ya se
       les hace `.trim()`).
 
-      **Próximo paso, uno solo:** abrir la URL del Worker
-      (`hoysi-despertador.imprenart.workers.dev`) y leer el campo `push`.
-      Ahora dice cuál de las dos claves está mal, qué tiene de malo y cuánto
-      mide cada una. La pública sana mide **87** y la privada **43**; un 44
-      suele ser un `=` de más y un 45+ comillas al pegarla.
+      ✅ **Resuelto el 2026-09-20.** Era una clave **pública pegada en la
+      variable de la privada** (medía 87 y tiene que medir 43). El diagnóstico
+      del Worker ahora dice `push: "ok — publica 87, privada 43"`.
 
-      Si hay que generar un par nuevo: **la privada no se pega en una
-      conversación** (es el error por el que hubo que rotar el token del bot).
-      Y ojo, cambia también la pública: hay que actualizar las dos variables.
+      > **La privada es la CORTA (43). La pública es la LARGA (87).** Se
+      > confundieron dos veces seguidas. Y las variables **no le llegan a la
+      > función hasta el redeploy**, así que el diagnóstico refleja el último
+      > despliegue, no lo que está guardado en el panel.
 
 - [ ] **Probar que llegue un aviso push de verdad**, con la app cerrada.
       Telegram ya está probado y llega bien, con los dos avisos (el anticipado
