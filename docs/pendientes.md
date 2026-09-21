@@ -34,10 +34,26 @@ pública en Vercel, el `sw.js` con el manejador de push nunca se había subido,
 al celular le llegaba el HTML de Telegram a la vista, y `/api/push-token`
 aceptaba cualquier `uid` sin verificar.
 
-- [ ] **Cargar `VITE_VAPID_PUBLIC_KEY` en Vercel (Production) + redeploy.**
-      Sin esto no hay avisos: el navegador no se puede suscribir. Verificado
-      bajando el JS publicado (decía `applicationServerKey: void 0`).
-- [ ] **Probar que llegue un aviso de verdad**, con la app cerrada.
+- [x] ~~Cargar `VITE_VAPID_PUBLIC_KEY` en Vercel~~ ✅ hecha y verificada en el
+      JS publicado.
+- [ ] ⚠️ **`VAPID_PRIVATE_KEY` está cargada pero `web-push` la rechaza.** El
+      diagnóstico del Worker decía `las claves no sirven`. Las dos variables
+      existen, así que es un problema de formato, y no es un espacio (ya se
+      les hace `.trim()`).
+
+      **Próximo paso, uno solo:** abrir la URL del Worker
+      (`hoysi-despertador.imprenart.workers.dev`) y leer el campo `push`.
+      Ahora dice cuál de las dos claves está mal, qué tiene de malo y cuánto
+      mide cada una. La pública sana mide **87** y la privada **43**; un 44
+      suele ser un `=` de más y un 45+ comillas al pegarla.
+
+      Si hay que generar un par nuevo: **la privada no se pega en una
+      conversación** (es el error por el que hubo que rotar el token del bot).
+      Y ojo, cambia también la pública: hay que actualizar las dos variables.
+
+- [ ] **Probar que llegue un aviso push de verdad**, con la app cerrada.
+      Telegram ya está probado y llega bien, con los dos avisos (el anticipado
+      y el de la hora).
 - [ ] **Elegir el sonido** en Ajustes → Aplicaciones → Chrome → Notificaciones
       → Sitios → `tareas.ginialtech.com`. La app no puede elegirlo (ver 7n).
 - [ ] Confirmar que `firestore.rules` con el camino `users/{uid}/config/push`
@@ -322,9 +338,9 @@ Viene de `AGENTS.md`, repetido acá porque es lo que frena todo lo demás.
       `firebase-adminsdk-fbsvc@todo-list-846e2` → Claves.
       ⚠️ Ojo: **no revocar la nueva**, que es la que usa `FIREBASE_SERVICE_ACCOUNT`
       en Vercel y hace andar el bot.
-- [ ] **Rotar el token del bot de Telegram.** Se pegó completo en una
-      conversación. Se decidió dejarlo para después y sin aviso (`/revoke` en
-      @BotFather + actualizar la variable en Vercel).
+- [x] ~~**Rotar el token del bot de Telegram.**~~ ✅ Hecho el 2026-09-20:
+      revocado en @BotFather y el nuevo ya cargado en Vercel. Los avisos
+      siguen llegando.
 
 ---
 
