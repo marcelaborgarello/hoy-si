@@ -1,5 +1,5 @@
 import pino from 'pino'
-import webpush from 'web-push'
+import type { PushSubscription } from 'web-push'
 import { estadoAdmin, getDbAdmin } from './_firebase.js'
 
 const log = pino({ name: 'avisar' })
@@ -11,20 +11,14 @@ const SECRET = process.env.CRON_SECRET
  * Claves de Web Push. Son un PAR y tienen que casar: si la pública con la que
  * se suscribió el navegador no es la misma con la que se firma acá, el aviso
  * sale, el celular lo descarta y no se queja nadie. Por eso las dos salen de
- * la misma variable y no hay ninguna pegada en el código.
+ * variables y no hay ninguna pegada en el código.
+ *
+ * El `.trim()` no es adorno: pegar una clave en el panel de Vercel y que se
+ * lleve un espacio o un salto de línea es de lo más común, y `web-push`
+ * rechaza la clave entera por ese carácter de más.
  */
-const VAPID_PUBLICA = process.env.VITE_VAPID_PUBLIC_KEY
-const VAPID_PRIVADA = process.env.VAPID_PRIVATE_KEY
-const pushListo = Boolean(VAPID_PUBLICA && VAPID_PRIVADA)
-
-if (!pushListo) {
-  log.error(
-    { publica: VAPID_PUBLICA ? 'ok' : 'FALTA', privada: VAPID_PRIVADA ? 'ok' : 'FALTA' },
-    'avisos del celular apagados: faltan claves VAPID en Vercel',
-  )
-} else {
-  webpush.setVapidDetails('mailto:ginialtech@gmail.com', VAPID_PUBLICA!, VAPID_PRIVADA!)
-}
+const VAPID_PUBLICA = process.env.VITE_VAPID_PUBLIC_KEY?.trim()
+const VAPID_PRIVADA = process.env.VAPID_PRIVATE_KEY?.trim()
 
 /**
  * Manda los avisos que tocan ahora.
@@ -147,6 +141,57 @@ function armarCuerpoPush(t: TareaDoc, faltan: number): string {
 }
 
 /**
+ * Prepara `web-push`, una sola vez y sin poder tirar abajo nada.
+ *
+ * ⚠️ Esto ANTES vivía arriba de todo, en el cuerpo del módulo, y ahí es
+ * donde muerde: `setVapidDetails` valida las claves y **tira una excepción**
+ * si alguna no tiene el largo exacto. Una excepción en el cuerpo del módulo
+ * hace que la función ni arranque (FUNCTION_INVOCATION_FAILED) y se caen
+ * TODOS los avisos, también los de Telegram, que no tienen nada que ver.
+ *
+ * Es el mismo motivo por el que `_firebase.ts` importa firebase-admin de
+ * forma dinámica. Misma trampa, misma solución.
+ */
+let push: typeof import('web-push') | null = null
+let pushRevisado = false
+
+async function prepararPush(): Promise<typeof import('web-push') | null> {
+  if (pushRevisado) return push
+  pushRevisado = true
+
+  if (!VAPID_PUBLICA || !VAPID_PRIVADA) {
+    log.error(
+      { publica: VAPID_PUBLICA ? 'ok' : 'FALTA', privada: VAPID_PRIVADA ? 'ok' : 'FALTA' },
+      'avisos del celular apagados: faltan claves VAPID en Vercel',
+    )
+    return null
+  }
+
+  try {
+    const mod = await import('web-push')
+    const webpush = mod.default ?? mod
+    webpush.setVapidDetails('mailto:ginialtech@gmail.com', VAPID_PUBLICA, VAPID_PRIVADA)
+    push = webpush
+    return push
+  } catch (err) {
+    // Clave con el largo equivocado, mal copiada, o el módulo que no carga.
+    // Se apagan los avisos del celular y Telegram sigue andando igual.
+    log.error(
+      { err: err instanceof Error ? err.message : String(err) },
+      'avisos del celular apagados: las claves VAPID no sirven',
+    )
+    return null
+  }
+}
+
+/** En una palabra, para poder mirarlo sin logs. Nunca incluye una clave. */
+async function estadoPush(): Promise<string> {
+  if (!VAPID_PUBLICA) return 'falta la clave publica'
+  if (!VAPID_PRIVADA) return 'falta la clave privada'
+  return (await prepararPush()) ? 'ok' : 'las claves no sirven'
+}
+
+/**
  * Manda el aviso al celular.
  *
  * Nada de `sound`: no existe en las notificaciones web (se sacó del estándar
@@ -158,10 +203,11 @@ async function enviarPush(
   cuerpo: string,
   taskId: string,
 ): Promise<boolean> {
-  if (!pushListo) return false
+  const webpush = await prepararPush()
+  if (!webpush) return false
 
   try {
-    const subscription = JSON.parse(token) as webpush.PushSubscription
+    const subscription = JSON.parse(token) as PushSubscription
 
     const payload = JSON.stringify({
       title: titulo,
@@ -234,7 +280,11 @@ export async function POST(request: Request): Promise<Response> {
     .get()
 
   if (pendientes.empty) {
-    return Response.json({ revisadas: 0, enviados: 0 })
+    // El estado del push va en la respuesta a propósito: ni la dueña del
+    // proyecto ni yo podemos leer los Runtime Logs, así que sin esto no hay
+    // forma de saber si las claves VAPID sirven. Se ve abriendo la URL del
+    // Worker (ver worker/README.md). No revela ninguna clave.
+    return Response.json({ revisadas: 0, enviados: 0, push: await estadoPush() })
   }
 
   // Primero: colectar todos los uids únicos y pre-filtrar tareas inválidas.
@@ -334,5 +384,5 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   log.info({ revisadas: pendientes.size, enviados, vencidos }, 'corrida de avisos')
-  return Response.json({ revisadas: pendientes.size, enviados, vencidos })
+  return Response.json({ revisadas: pendientes.size, enviados, vencidos, push: await estadoPush() })
 }
