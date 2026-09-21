@@ -214,7 +214,8 @@ async function estadoPush(): Promise<string> {
  * Manda el aviso al celular.
  *
  * Nada de `sound`: no existe en las notificaciones web (se sacó del estándar
- * en 2018). El sonido lo pone el sistema y se cambia desde el teléfono.
+ * en 2018). El sonido lo pone el sistema, y según la marca del teléfono puede
+ * que ni siquiera se pueda cambiar desde los ajustes. No se promete en pantalla.
  */
 async function enviarPush(
   token: string,

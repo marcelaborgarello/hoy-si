@@ -27,6 +27,81 @@ hora. Ver punto 7m de `AGENTS.md`.
 - [ ] **Falta probarlo de punta a punta**: que lleguen los dos mensajes de
       verdad. Se verificó la interfaz y que se guarda, no el envío.
 
+## Push: qué se probó el 2026-09-21 y qué quedó
+
+**El envío NO está roto. Se probó de punta a punta, con evidencia.**
+
+Corrida de las 10:30:01 en los Runtime Logs de Vercel:
+
+```
+{"revisadas":1,"enviados":1,"vencidos":0,"msg":"corrida de avisos"}
+External APIs:  POST api.telegram.org/bot***/sendMessage
+                POST fcm.googleapis.com/fcm/send/c3VmG022HlQ:...
+```
+
+Las dos llamadas salieron, sin un solo error en el log. Y preguntándole al
+navegador `registration.getNotifications()` aparecía la notificación
+`"Acordar con Vane el envío"` viva adentro de Chrome. O sea: servidor → FCM →
+service worker → `showNotification` funcionan.
+
+Lo que falla es **Windows**: "No molestar" estaba activado, así que las
+notificaciones se crean y se guardan calladas en vez de salir en pantalla.
+No es de la app y no se arregla con código.
+
+### Lo que sí hay que arreglar (encontrado el mismo día)
+
+- [x] ~~El globo de avisos decía **"Avisarme por Telegram"** y el botón de la
+      tarjeta decía **"Telegram"**~~ ✅ **2026-09-21.** No eligen canal:
+      encienden y apagan el aviso entero, para Telegram y para el aparato.
+      Marcela destildó buscando "push sin Telegram" y se quedó sin ninguno de
+      los dos (su tarea de las 10:20 quedó con `notify: false` y no salió nada
+      — el log de ese minuto no tiene ninguna llamada externa). Ahora dicen
+      **"Avisarme"** y **"Avisarme de esta tarea"**.
+
+- [ ] ⚠️ **Sin Telegram conectado no se puede prender ningún aviso.**
+      `Avisos.tsx`: `telegramOff = sinHora || !telegramConectado` deshabilita
+      el botón, y ese botón es el único interruptor del aviso. O sea que los
+      avisos del aparato **dependen de tener Telegram**, que no tiene ningún
+      sentido. Es cambio de comportamiento: preguntar antes.
+
+- [ ] ⚠️ **Una sola ranura de token para toda la cuenta.**
+      `users/{uid}/config/push` guarda **un** campo `token`. El último aparato
+      que activa pisa al anterior, y el anterior deja de recibir sin enterarse
+      (la pantalla dice "Avisos activados" porque le pregunta al navegador, no
+      al servidor). Verificado: el token guardado el 2026-09-21 a las 09:31 era
+      el de la computadora — coincide con la suscripción de ese Chrome.
+      **Arreglo:** subcolección `users/{uid}/push/{id}`, un documento por
+      aparato, `avisar.ts` recorriendo todos y borrando el que devuelva 404 o
+      410. Toca `firestore.rules`.
+
+- [ ] **"Apagar los avisos" está roto.** `usePush.desactivar()` escribe
+      `token: null` y la regla `esPushValida()` exige que `token` sea string
+      (`d.get('token','') is string`); `null` no lo es, Firestore rechaza la
+      escritura, el error se traga y la pantalla sigue diciendo "activados"
+      hasta que recargás. Reproducido por Marcela.
+
+- [ ] **No hay forma de volver a activar** cuando ya figura activado: con
+      `push.activado` la pantalla solo ofrece "Apagar". Después de rotar las
+      claves VAPID eso te deja sin salida (el código que rehace la suscripción
+      existe en `usePush.activar`, pero ese botón no se dibuja).
+
+- [ ] **El diagnóstico del Worker miente.** `estadoPush()` dice `ok` con solo
+      medir el largo de las claves, y `setVapidDetails` **no** comprueba que la
+      pública y la privada sean pareja. Se puede comprobar de verdad derivando
+      la pública a partir de la privada
+      (`crypto.createECDH('prime256v1').setPrivateKey(...).getPublicKey()`) y
+      comparándolas — probado en Node, y nunca imprime la privada. Conviene
+      sumar también cuántas suscripciones hay guardadas y con qué código falló
+      cada envío.
+
+- [ ] **Los Runtime Logs de Vercel solo duran 1 hora en el plan Hobby.**
+      "Últimas 12 horas" y "Último día" piden Pro. Por eso nadie los podía usar
+      para atrás. Si hace falta mirar algo, hay que mirarlo dentro de la hora.
+
+- [ ] **Un botón "Probar aviso"** en Configuración: manda una notificación en
+      el momento y muestra el error exacto si falla. Es lo que hubiera evitado
+      los tres días de esta búsqueda.
+
 ## ~~Notificaciones en la misma app~~ ✅ Código hecho el 2026-09-20
 
 Ver punto 7n de `AGENTS.md`. Se arreglaron cuatro cosas: faltaba la clave
@@ -70,8 +145,15 @@ aceptaba cualquier `uid` sin verificar.
 - [ ] **Probar que llegue un aviso push de verdad**, con la app cerrada.
       Telegram ya está probado y llega bien, con los dos avisos (el anticipado
       y el de la hora).
-- [ ] **Elegir el sonido** en Ajustes → Aplicaciones → Chrome → Notificaciones
-      → Sitios → `tareas.ginialtech.com`. La app no puede elegirlo (ver 7n).
+- [x] ~~**Elegir el sonido**~~ ❌ **No se puede, y se sacó de la pantalla el
+      2026-09-21.** No es solo que la app no pueda elegirlo (eso ya se sabía):
+      en el teléfono de Marcela **tampoco se puede a mano**. Con la app
+      instalada, los ajustes de "Hoy sí" solo tienen prender/apagar el aviso,
+      intensidad y estilo — no hay selector de sonido, y la ruta que decía acá
+      (Chrome → Notificaciones → Sitios) no aplica a una app instalada, porque
+      los avisos ya no salen de Chrome sino de "Hoy sí".
+      El texto que lo prometía se borró de Configuración, de `sw.js` y de
+      `api/avisar.ts`.
 - [ ] Confirmar que `firestore.rules` con el camino `users/{uid}/config/push`
       esté desplegado (`bun run rules`). Sin eso el navegador no puede guardar
       la suscripción.

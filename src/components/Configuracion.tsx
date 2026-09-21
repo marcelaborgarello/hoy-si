@@ -112,11 +112,12 @@ export function Configuracion({ config: cfg, nombreDeGoogle, uid, onClose }: Pro
           </section>
 
           <section className="section">
-            <h3>Avisos en este celular</h3>
+            <h3>Avisos en este aparato</h3>
 
             {!push.soportado ? (
               <p className="ayuda">
-                Este navegador no puede mostrar avisos. Desde el celular, probá con Chrome.
+                Este navegador no puede mostrar avisos. Probá con Chrome, en la compu o en el
+                celular.
               </p>
             ) : push.activado ? (
               <>
@@ -128,8 +129,8 @@ export function Configuracion({ config: cfg, nombreDeGoogle, uid, onClose }: Pro
                   cerrada. Solo funciona con las tareas que tengan hora.
                 </p>
                 <p className="ayuda chico">
-                  El sonido lo elegís vos desde los ajustes del celular, en las notificaciones de
-                  esta app. Desde acá no se puede cambiar.
+                  Por ahora los avisos van a <b>un solo aparato</b>: el último donde los
+                  activaste. Si los activás en la compu, dejan de llegarte al celular.
                 </p>
                 <button
                   className="btn sm danger"

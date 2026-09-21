@@ -3,7 +3,7 @@
  *
  * Hace dos cosas:
  * 1. Que la app ABRA sin internet (caché de archivos básicos)
- * 2. Manejar notificaciones push con sonido personalizado
+ * 2. Mostrar los avisos que llegan con la app cerrada
  */
 
 const CACHE = 'hoy-si-v1'
@@ -84,9 +84,11 @@ self.addEventListener('fetch', (e) => {
  * en 2014, ningún navegador la implementó y la sacaron del estándar en 2018.
  * Si aparece de nuevo en este archivo, es humo: el navegador ni la mira.
  *
- * El sonido lo decide el sistema. En Android se puede cambiar desde los
- * ajustes del teléfono, en el canal de notificaciones de este sitio — pero
- * eso lo elige quien usa la app, no este código.
+ * El sonido lo decide el sistema, y **no siempre se puede cambiar**: depende
+ * de la marca del teléfono. Verificado en el de Marcela (Android, con la app
+ * instalada): los ajustes de "Hoy sí" solo dejan prender o apagar el aviso y
+ * elegir el estilo — no hay ningún selector de sonido. Así que no se le
+ * promete eso a nadie en pantalla.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 self.addEventListener('push', (e) => {

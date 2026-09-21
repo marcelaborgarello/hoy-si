@@ -58,7 +58,10 @@ export function ElegirAvisos({ task, onCambiar, onCerrar, embebido }: Props) {
       role={embebido ? undefined : 'dialog'}
       aria-label={embebido ? undefined : 'Elegir avisos'}
     >
-      {!embebido && <p className="avisos-pop-titulo">Avisarme por Telegram</p>}
+      {/* Decía "Avisarme por Telegram" y era mentira: estas casillas no eligen
+          el canal, encienden y apagan el aviso entero — Telegram Y el aparato.
+          Destildar las dos te deja sin ninguno de los dos. */}
+      {!embebido && <p className="avisos-pop-titulo">Avisarme de esta tarea</p>}
 
       <label className="avisos-pop-fila">
         <input
@@ -105,7 +108,9 @@ export function ElegirAvisos({ task, onCambiar, onCerrar, embebido }: Props) {
 
       <div className="avisos-pop-pie">
         {!task.notifyAtTime && antes === null ? (
-          <span className="avisos-pop-nota">Sin avisos: esta tarea no te va a escribir.</span>
+          <span className="avisos-pop-nota">
+            Sin avisos: esta tarea no te va a avisar por ningún lado.
+          </span>
         ) : (
           <span className="avisos-pop-nota">
             {task.notifyAtTime && antes !== null ? 'Te llegan dos avisos.' : 'Te llega un aviso.'}

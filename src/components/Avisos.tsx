@@ -30,6 +30,14 @@ export function Avisos({
 }: Props) {
   const motivoHora = 'Ponele una hora y te puedo avisar'
 
+  // ⚠️ El botón decía "Telegram" y no es un botón de Telegram: es el ÚNICO
+  // interruptor del aviso, y vale para Telegram y para los avisos del aparato.
+  // Por eso ahora dice "Avisarme".
+  //
+  // Queda algo peor sin arreglar, y es de comportamiento, no de texto: mientras
+  // `telegramConectado` sea false el botón está deshabilitado, así que **sin
+  // Telegram no se puede prender ningún aviso, ni siquiera el del aparato**.
+  // Anotado en docs/pendientes.md.
   const telegramOff = sinHora || !telegramConectado
   const motivoTelegram = sinHora
     ? motivoHora
@@ -68,12 +76,12 @@ export function Avisos({
                 )
               }
             >
-              <IconoTelegram /> Telegram
+              <IconoTelegram /> Avisarme
               {encendido && <span className="tilde">✓</span>}
             </button>
           ) : (
             <span className={`btn alerta${telegramOff || !encendido ? ' off' : ''}`}>
-              <IconoTelegram /> Telegram
+              <IconoTelegram /> Avisarme
             </span>
           )}
         </span>
