@@ -155,6 +155,17 @@ function armarCuerpoPush(t: TareaDoc, faltan: number): string {
 let push: typeof import('web-push') | null = null
 let pushRevisado = false
 
+/**
+ * Por qué no se pudo preparar. Se muestra en el diagnóstico.
+ *
+ * Los mensajes de web-push son del estilo "Vapid private key should be 32
+ * bytes long when decoded" o "must be a URL safe Base 64": dicen **cuál** de
+ * las dos claves está mal y **qué** tiene de malo, y **nunca incluyen la
+ * clave**. Verificado probando los errores más comunes (comillas alrededor
+ * del valor, un `=` al final, o la pública pegada en la privada).
+ */
+let motivoPush: string | null = null
+
 async function prepararPush(): Promise<typeof import('web-push') | null> {
   if (pushRevisado) return push
   pushRevisado = true
@@ -176,19 +187,27 @@ async function prepararPush(): Promise<typeof import('web-push') | null> {
   } catch (err) {
     // Clave con el largo equivocado, mal copiada, o el módulo que no carga.
     // Se apagan los avisos del celular y Telegram sigue andando igual.
-    log.error(
-      { err: err instanceof Error ? err.message : String(err) },
-      'avisos del celular apagados: las claves VAPID no sirven',
-    )
+    motivoPush = err instanceof Error ? err.message : String(err)
+    log.error({ motivo: motivoPush }, 'avisos del celular apagados')
     return null
   }
 }
 
-/** En una palabra, para poder mirarlo sin logs. Nunca incluye una clave. */
+/**
+ * El estado del push en una línea, para poder mirarlo sin acceso a los logs.
+ *
+ * Incluye el largo de cada clave porque es el dato que más rápido resuelve
+ * el problema: la pública sana mide 87 caracteres y la privada 43. Un 44
+ * suele ser un `=` de más, y un 45 o más, comillas alrededor del valor.
+ * **El largo no revela la clave.**
+ */
 async function estadoPush(): Promise<string> {
   if (!VAPID_PUBLICA) return 'falta la clave publica'
   if (!VAPID_PRIVADA) return 'falta la clave privada'
-  return (await prepararPush()) ? 'ok' : 'las claves no sirven'
+
+  const medidas = `publica ${VAPID_PUBLICA.length} (sana: 87), privada ${VAPID_PRIVADA.length} (sana: 43)`
+  if (await prepararPush()) return `ok — ${medidas}`
+  return `${motivoPush ?? 'no se pudo preparar'} — ${medidas}`
 }
 
 /**
