@@ -68,7 +68,7 @@ No es de la app y no se arregla con código.
 - [x] ~~El globo de avisos decía **"Avisarme por Telegram"** y el botón de la
       tarjeta decía **"Telegram"**~~ ✅ **2026-09-21.** No eligen canal:
       encienden y apagan el aviso entero, para Telegram y para el aparato.
-      Marcela destildó buscando "push sin Telegram" y se quedó sin ninguno de
+      Se destildó buscando "push sin Telegram" y se quedó sin ninguno de
       los dos (su tarea de las 10:20 quedó con `notify: false` y no salió nada
       — el log de ese minuto no tiene ninguna llamada externa). Ahora dicen
       **"Avisarme"** y **"Avisarme de esta tarea"**.
@@ -93,7 +93,7 @@ No es de la app y no se arregla con código.
       `token: null` y la regla `esPushValida()` exige que `token` sea string
       (`d.get('token','') is string`); `null` no lo es, Firestore rechaza la
       escritura, el error se traga y la pantalla sigue diciendo "activados"
-      hasta que recargás. Reproducido por Marcela.
+      hasta que recargás. Reproducido al usarla.
 
 - [ ] **No hay forma de volver a activar** cuando ya figura activado: con
       `push.activado` la pantalla solo ofrece "Apagar". Después de rotar las
@@ -162,7 +162,7 @@ aceptaba cualquier `uid` sin verificar.
       y el de la hora).
 - [x] ~~**Elegir el sonido**~~ ❌ **No se puede, y se sacó de la pantalla el
       2026-09-21.** No es solo que la app no pueda elegirlo (eso ya se sabía):
-      en el teléfono de Marcela **tampoco se puede a mano**. Con la app
+      en el teléfono donde se probó **tampoco se puede a mano**. Con la app
       instalada, los ajustes de "Hoy sí" solo tienen prender/apagar el aviso,
       intensidad y estilo — no hay selector de sonido, y la ruta que decía acá
       (Chrome → Notificaciones → Sitios) no aplica a una app instalada, porque
@@ -491,13 +491,13 @@ decía que Telegram estaba apagado y ya no lo está.
 | `bunx tsc --noEmit` | **pasa, salida 0** ❌ |
 | `bunx tsc -b` | falla correctamente ✅ |
 
-O sea que el comando de la regla de oro de ginialym **acá miente siempre**, no
-solo con ese bug. Por eso existe ahora **`bun run check`** (= `tsc -b`), que es
-el que hay que correr, y el que ya corre `bun run build` por dentro.
+O sea que `tsc --noEmit` **acá miente siempre**, no solo con ese bug. Por eso
+existe **`bun run check`** (= `tsc -b`), que es el que hay que correr, y el que
+ya corre `bun run build` por dentro.
 
-- [ ] Ver si en ginialym pasa lo mismo. Si ese `tsconfig.json` también usa
-      referencias con `files: []`, la regla de oro de ahí está apoyada en un
-      comando que no chequea nada.
+- [ ] Revisar si otros proyectos con `tsconfig.json` de referencias y
+      `files: []` arrastran el mismo problema: un chequeo de tipos que no
+      chequea nada y pasa siempre.
 
 ---
 

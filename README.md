@@ -1,116 +1,148 @@
 # Hoy sí
 
-Una todo list pensada para **arrancar**, no para administrar tareas.
+**Una lista de tareas para arrancar, no para administrar.**
 
-Anotás algo, apretás **Empecé**, y cuando lo tachás te dice cuánto tardó de
-verdad. Casi siempre es menos de lo que imaginabas.
+El problema de una todo list común es que te muestra todo lo que no hiciste. Esta
+hace lo contrario: te pide una sola cosa por vez, registra el momento en que
+**empezaste** —no solo cuando terminaste— y al tachar te dice cuánto tardó de
+verdad.
 
-En producción: **[tareas.ginialtech.com](https://tareas.ginialtech.com)**
+Casi siempre es mucho menos de lo que imaginabas. Esa es toda la idea.
 
-## Andar
+🔗 **[tareas.ginialtech.com](https://tareas.ginialtech.com)**
+
+![Anotar una tarea, apretar Empecé, tacharla y ver cuánto llevó en realidad](./docs/demo.gif)
+
+*Anotar, empezar, tachar. Al final dice lo que tardó de verdad.*
+
+---
+
+## Las tres decisiones que la definen
+
+No son funciones sueltas: son la respuesta a por qué cuesta empezar algo.
+
+**1. Empezar ya es progreso.** Una tarea tiene tres estados, no dos. El botón
+*Empecé* existe porque arrancar es el paso que más cuesta, y merece contar como
+avance por sí solo.
+
+**2. La antigüedad se ve.** Cada tarea abierta dice hace cuántos días espera. La
+culpa vaga no mueve a nadie; un número concreto sí.
+
+**3. Al final se muestra la evidencia.** Al tachar aparece cuánto llevó
+realmente. Es la prueba, acumulada en tu propia lista, de que la tarea era más
+chica que el peso que tenía encima.
+
+De ahí salen dos reglas de interfaz que se respetan en todo el código:
+
+- **El rojo es solo para lo que de verdad se pasó de fecha.** Una lista que te
+  reta produce más evitación, que es exactamente lo que la app viene a combatir.
+- **Ninguna acción puede terminar sin respuesta en pantalla.** Si algo no se
+  guardó, se dice.
+
+## Cómo se usa
+
+La lista está partida en dos, porque son dos momentos distintos:
+
+- **Sin agendar** — el volcadero. Todo lo pendiente, sin pensar en cuándo.
+- **Agenda** — lo que tiene día, en bloques (*En curso*, *Se pasaron*, *Hoy*,
+  *Mañana*, los días siguientes, *Terminadas*).
+
+Se pasa de una a la otra con el botón 📅 de cada tarjeta. Las tareas con hora
+pueden avisarte por **Telegram** o por **notificación del teléfono**, y también
+generar un evento de **Google Calendar**.
+
+## Levantarla
 
 ```bash
 bun install
 bun run dev
 ```
 
-Se abre en http://localhost:5173
+Abre en <http://localhost:5173>.
 
-Necesitás un archivo `.env` con la config de Firebase (copiá `.env.example`).
-Sin él la app **igual funciona**: guarda en el navegador en vez de en la nube.
+**Funciona sin configurar nada.** Sin credenciales de Firebase guarda en el
+navegador y te lo avisa en pantalla. Para usar la nube, copiá `.env.example` a
+`.env` y completá los valores de tu propio proyecto de Firebase.
+
+> Requiere [bun](https://bun.sh). El proyecto no usa npm.
 
 ## Comandos
 
 | Comando | Qué hace |
 |---|---|
 | `bun run dev` | Servidor de desarrollo |
-| `bun run check` | **Chequeo de tipos.** Ver la advertencia de abajo |
+| `bun run check` | Chequeo de tipos — **ver la advertencia de abajo** |
 | `bun run build` | Chequeo + build de producción en `dist/` |
-| `bun run preview` | Ver el build ya compilado |
+| `bun run preview` | Servir el build ya compilado |
 | `bun run lint` | oxlint |
-| `bun run fb:login` | Entrar a Firebase desde la terminal (abre el navegador) |
 | `bun run rules` | Desplegar `firestore.rules` |
 
-> ⚠️ **No uses `tsc --noEmit` acá.** `tsconfig.json` tiene `"files": []` y solo
-> referencias, así que ese comando no compila nada y **sale con éxito aunque el
-> código esté roto**. El que sirve es `bun run check` (`tsc -b`), y es el mismo
-> que corre `bun run build` por dentro.
+> ⚠️ **`tsc --noEmit` no sirve en este proyecto.** `tsconfig.json` usa
+> `"files": []` con referencias, así que ese comando no compila nada y **termina
+> con éxito aunque el código esté roto** (verificado rompiéndolo a propósito).
+> El que chequea de verdad es `bun run check` (`tsc -b`), que además corre
+> dentro de `bun run build`.
 
 ## Cómo está armado
 
-- **React 19 + Vite + TypeScript**, sin framework de servidor. No hay rutas ni
-  SEO que justifiquen algo más pesado.
-- **zod** valida todo lo que entra desde afuera: si un documento viene roto se
-  descarta esa tarea sola, en vez de romper la app entera.
-- **Firestore** guarda las tareas en `users/{uid}/tasks`, con login de Google.
-- **Storage enchufable**: si falta config de Firebase —o si la nube rechaza la
-  conexión— cae solo a guardar en el navegador y te lo avisa. Un problema de
-  infraestructura nunca deja la app inutilizable.
-- **La lista es una agenda**: bloques por día (En curso, Se pasaron, Hoy,
-  Mañana, los días siguientes, Sin fecha, Terminadas).
+**React 19 + Vite + TypeScript**, sin framework de servidor: no hay rutas ni SEO
+que justifiquen algo más pesado. Los estilos son CSS plano con custom
+properties, escrito **mobile first** — la app se usa parada, con el teléfono en
+la mano, que es justo cuando se anota lo que se viene pateando.
 
-Mirá el badge de arriba a la derecha para saber dónde están tus cosas:
-**"Guardado en la nube"** o **"Solo en esta compu"**.
+Cuatro decisiones que vale la pena mirar si venís a leer el código:
 
-### Funciones de servidor (`api/`)
+**Almacenamiento enchufable.** `src/lib/store.ts` define una interfaz y elige el
+backend al arrancar: Firestore si hay credenciales, `localStorage` si no —o si
+la nube falla en caliente. Un problema de infraestructura nunca deja la app
+inutilizable, porque no poder anotar algo es la mejor excusa para no hacerlo.
 
-| Ruta | Qué hace |
+**Todo lo que entra se valida con zod.** Si un documento viene roto, se descarta
+esa tarea sola en lugar de tumbar la aplicación entera.
+
+**La seguridad se evalúa en el servidor.** `firestore.rules` no corre en el
+navegador: se despliega a Google y se aplica en cada operación. Cada usuario
+entra solo a su carpeta, y se valida la forma de cada documento. Reescribir el
+JavaScript del cliente no sirve de nada.
+
+**Ninguna clave privada toca el navegador.** Las variables `VITE_*` son públicas
+por diseño y viajan en el bundle; los secretos de verdad no llevan prefijo y
+viven solo del lado del servidor.
+
+### Las piezas de servidor
+
+| Pieza | Qué hace |
 |---|---|
-| `api/log.ts` | Recibe los logs del navegador y los escribe con **pino**. Es lo único que aparece en los Runtime Logs de Vercel. |
-| `api/telegram.ts` | Webhook del bot `@hoysi_tareas_bot`: vincula el chat con la cuenta. |
-| `api/_firebase.ts` | Firestore del lado del servidor (cuenta de servicio). No es una ruta. |
+| `api/avisar.ts` | Busca tareas por vencer y manda los avisos. Protegida con `CRON_SECRET`. |
+| `api/telegram.ts` | Webhook del bot: vincula la cuenta y atiende los botones del mensaje. |
+| `api/log.ts` | Recibe los logs del navegador y los escribe con pino. |
+| `worker/` | Un Cloudflare Worker de diez líneas que le toca el timbre a `api/avisar` cada minuto. Está ahí porque el cron gratuito de Vercel corre una vez por día. |
 
-> **En `api/` los imports relativos llevan `.js`**, aunque el archivo sea `.ts`.
-> Es ESM y Node no resuelve sin extensión. Sin eso la función ni arranca y
-> Vercel devuelve `FUNCTION_INVOCATION_FAILED` sin ninguna pista.
+> En `api/` los imports relativos **llevan `.js`** aunque el archivo sea `.ts`:
+> es ESM y Node no resuelve sin extensión. Sin eso la función ni arranca.
 
-### Avisos
+### Estructura
 
-- **Google Calendar** — un link que abre el evento prellenado. Sin API, sin
-  permisos sobre tu calendario, sin backend.
-- **Telegram** — el bot te escribe. Se conecta desde **⚙️ Configuración** con un
-  toque: no hay que copiar ni pegar códigos. ⏳ **Todavía no manda los avisos**:
-  falta la tarea programada que despierte a la hora justa.
-
-Los dos solo funcionan con tareas que tengan **hora**. Si no la tienen, el botón
-se ve apagado y explica por qué.
-
-## Seguridad
-
-Las reglas de Firestore (`firestore.rules`) **se evalúan en los servidores de
-Google**, no en el navegador: cada usuario entra solo a su propia carpeta, y se
-valida la forma de cada documento. Aunque alguien reescriba el JavaScript del
-cliente, no puede saltearlas.
-
-> ⚠️ En las reglas, todo campo opcional se lee con `d.get('campo', default)`.
-> Leer un campo que no existe hace fallar la regla **entera**. Ya rompió una vez:
-> al agregar `dueTime`, las tareas viejas dejaron de poder tacharse.
-
-La config `VITE_FIREBASE_*` viaja en el bundle y eso está bien: es pública por
-diseño en toda app web de Firebase y no da acceso a nada.
-
-> **Regla del proyecto:** ninguna clave privada toca el navegador. Las que
-> importan (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`,
-> `FIREBASE_SERVICE_ACCOUNT`) **no llevan prefijo `VITE_`** y viven solo en las
-> variables de entorno del servidor.
-
-## Desplegar
-
-Conectado a **Vercel**: cada push a `main` publica. Las variables de entorno se
-configuran ahí — las `VITE_*` como `config` (Vercel no deja marcarlas secretas,
-justamente porque son públicas) y las del servidor como `sensitive`.
-
-Las variables se compilan **dentro** del bundle: cambiarlas sin redeployar no
-hace nada.
-
-Después de conectar un dominio nuevo hay que **autorizarlo en Firebase**:
-Console → Authentication → Settings → Authorized domains. Si no, el sitio carga
-perfecto y el login con Google falla sin explicación.
+```
+src/
+  App.tsx            login + tablero: layout, filtros, orden, festejo
+  types/task.ts      esquemas zod y tipos
+  hooks/             sesión, tareas, configuración, notificaciones
+  lib/               storage, agenda, fechas, mensajes, logger
+  components/        formulario, tarjeta, detalle, avisos, menú
+api/                 funciones de servidor
+worker/              el despertador programado
+firestore.rules      permisos y validación (se evalúan en Google)
+```
 
 ## Documentación
 
 | Archivo | Qué tiene |
 |---|---|
-| [CLAUDE.md](./CLAUDE.md) | Cómo se trabaja en este proyecto |
-| [AGENTS.md](./AGENTS.md) | El porqué de cada decisión ya tomada |
-| [docs/pendientes.md](./docs/pendientes.md) | Lo que falta hacer |
+| [`AGENTS.md`](./AGENTS.md) | El porqué de cada decisión tomada, con los errores que costaron tiempo |
+| [`CLAUDE.md`](./CLAUDE.md) | Cómo se trabaja en este repositorio |
+| [`docs/pendientes.md`](./docs/pendientes.md) | Lo que falta hacer |
+
+## Licencia
+
+[MIT](./LICENSE) — usala, copiala, cambiala.

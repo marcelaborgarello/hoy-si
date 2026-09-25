@@ -15,8 +15,25 @@ export default {
     ctx.waitUntil(tocarTimbre(env))
   },
 
-  // Permite probarlo a mano abriendo la URL del Worker, sin esperar al minuto.
+  // Disparo manual, para no tener que esperar al minuto cuando se diagnostica.
+  //
+  // ⚠️ Exige el mismo secreto que usa la app. Sin esta comprobación, el Worker
+  // era un botón público: cualquiera que conociera su URL forzaba una corrida
+  // de avisos, quemaba cuota y podía duplicar mensajes si dos corridas se
+  // solapaban. El Worker pone el secreto por su cuenta, así que sin pedir nada
+  // estaba autenticando en nombre de quien golpeara la puerta.
+  //
+  // El secreto va en un ENCABEZADO y no en la URL a propósito: lo que viaja en
+  // la query string queda escrito en logs, historiales y referers.
+  //
+  //   curl -H "x-cron-secret: <el secreto>" https://<worker>.workers.dev
   async fetch(request, env) {
+    const secreto = request.headers.get('x-cron-secret')
+    if (!env.CRON_SECRET || secreto !== env.CRON_SECRET) {
+      // 404 en vez de 401: no hace falta confirmarle a nadie que acá hay algo.
+      return new Response('Not found', { status: 404 })
+    }
+
     const r = await tocarTimbre(env)
     return new Response(r, { headers: { 'content-type': 'text/plain' } })
   },

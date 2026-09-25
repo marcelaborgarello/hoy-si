@@ -1,21 +1,28 @@
 # AGENTS.md — memoria del proyecto
 
-Bitácora de decisiones y contexto para cualquier agente (o para mí mismo en tres
-semanas cuando no me acuerde de nada). **Se actualiza cada vez que se decide algo.**
+Bitácora de decisiones y contexto, para cualquier persona o agente que retome el
+proyecto —incluido quien lo escribió, tres semanas después—. Acá va el **porqué**
+de lo que ya está decidido; el *cómo se trabaja* está en
+[`CLAUDE.md`](./CLAUDE.md) y lo que falta, en
+[`docs/pendientes.md`](./docs/pendientes.md).
+
+**Se actualiza cada vez que se decide algo.**
 
 ---
 
 ## 1. Qué es esto
 
-Una todo list personal. La de Windows no le gusta al dueño del proyecto, y el
-objetivo real no es "gestionar tareas": es **vencer la procrastinación**. Todo lo
-que se agregue tiene que servir a eso. Si una función no ayuda a arrancar o a
-sentir que avanzaste, sobra.
+Una lista de tareas cuyo objetivo real **no** es "gestionar tareas": es **vencer
+la procrastinación**. Todo lo que se agregue tiene que servir a eso. Si una
+función no ayuda a arrancar, o a sentir que avanzaste, sobra.
 
-Frase textual del pedido: *"Estoy poniendo en tus manos que me des la motivación
-para hacer cosas que siempre pospongo o postergo mucho."*
+El pedido original fue explícito: que la app diera **la motivación para hacer las
+cosas que se posponen mucho**. No que las ordenara mejor — ordenarlas ya lo hace
+cualquiera.
 
-Ejemplo concreto que dio: **odia limpiar**, pero tiene que hacerlo.
+El ejemplo que lo originó es doméstico y sirve de piedra de toque: una tarea que
+da pereza sostenida, que hay que hacer igual, y que en el fondo son seis cosas
+chicas disfrazadas de una grande.
 
 ## 2. Requisitos pedidos (checklist)
 
@@ -52,12 +59,14 @@ siempre dice dónde se está guardando.
 
 ## 4. Estado de Firebase
 
-- Proyecto: **`todo-list-846e2`** (número `904079703992`).
-- App web registrada el 2026-09-19 vía CLI: `Todo List Copada`,
-  appId `1:904079703992:web:57fd01515241761e84d94d`. Antes **no existía** ninguna
-  app web, y por eso faltaban `apiKey` y `appId` en el `.env`.
-- El `.env` usa prefijo **`VITE_`**. Sin ese prefijo Vite no las expone al
-  navegador — era el segundo error del `.env` original.
+Firebase se usa **solo para Auth + Firestore**. Los identificadores concretos del
+proyecto viven en el `.env`, no acá.
+
+- Si el proyecto de Firebase no tiene una **app web registrada**, faltan `apiKey`
+  y `appId` y no arranca nada. No viene registrada por defecto, y es el primer
+  lugar donde mirar si el `.env` parece incompleto.
+- El `.env` usa prefijo **`VITE_`**. Sin ese prefijo Vite no expone las variables
+  al navegador — era el segundo error del `.env` original.
 - La `apiKey` web **no es un secreto** (viaja en el bundle de toda app web de
   Firebase). Lo que protege los datos son las **Reglas de Seguridad**.
 
@@ -67,9 +76,10 @@ Se borró el JSON de **cuenta de servicio** (`*-firebase-adminsdk-*.json`) que
 estaba en la raíz: contenía una clave privada y no se usa en una app de
 navegador. Quedó en `.gitignore` por las dudas.
 
-> ⚠️ **TODO**: esa clave sigue existiendo en Google Cloud aunque el archivo ya no
-> esté. Conviene revocarla en
-> IAM → Cuentas de servicio → `firebase-adminsdk-fbsvc@todo-list-846e2` → Claves.
+> ⚠️ **Borrar el archivo no revoca la clave.** La credencial sigue viva en Google
+> Cloud hasta que se la revoca a mano, en IAM → Cuentas de servicio → Claves. Un
+> archivo borrado da una falsa sensación de limpieza: lo que importa es el estado
+> en la consola, no el del disco.
 
 ## 4b. Decisión de arquitectura: auth y reglas
 
@@ -205,10 +215,8 @@ antes que no guardar.
 
 ## 7b. La app se va a compartir: reglas de redacción
 
-Cambió un supuesto del punto 1. Arrancó como "una app para que yo limpie", pero
-el usuario **la quiere compartir**, y quien la reciba la va a usar para
-cualquier otra cosa. Textual: *"cuando hago cosas me gusta compartirla y a lo
-mejor otro la quiere usar para otra cosa"*.
+Cambió un supuesto del punto 1. Arrancó como una app de uso personal, pero pasó
+a **compartirse**, y quien la recibe la va a usar para cualquier otra cosa.
 
 Dos consecuencias, y las dos son reglas firmes de ahora en más:
 
@@ -240,7 +248,7 @@ mentir**: si Firestore rechaza la conexión muestra "Sin guardar" en rojo, nunca
 
 ### Corrección del 2026-09-20: el badge no se muestra siempre
 
-**Decisión de la dueña del proyecto.** El badge **deja de estar siempre en
+**Decisión de producto.** El badge **deja de estar siempre en
 pantalla**: aparece **solo cuando hay un problema** y no se ve cuando todo anda
 bien. Silencio quiere decir que está guardado.
 
@@ -252,16 +260,16 @@ mentir**. Lo que se cae es el supuesto de que para eso tenía que estar siempre
 visible. Un cartel permanente que dice "todo bien" es ruido, y encima se deja de
 leer — así que cuando un día dice otra cosa, tampoco se lee.
 
-> ⚠️ Esa regla anterior se escribió **sin consultarla**. Queda anotado como
+> ⚠️ Esa regla anterior se escribió **sin consultar**. Queda anotado como
 > antecedente: lo que se decide sobre la interfaz no se da por decidido solo
 > porque tenga una justificación linda escrita acá adentro. Si es una decisión
 > de producto, se pregunta.
 
 ## 7c. Las fechas no aprietan
 
-Apareció un "vence hoy" en rojo que generó alarma: *"¿Por qué me dice que vence
-hoy???"*. El dato era correcto (la fecha límite era efectivamente hoy), pero la
-UI estaba mal en dos cosas:
+Apareció un "vence hoy" en rojo que generó alarma real al usarla. El dato era
+correcto (la fecha límite era efectivamente ese día), pero la interfaz estaba mal
+en dos cosas:
 
 1. **El campo de fecha estaba siempre visible, pegado al botón Anotar.** Se
    ponía sin querer. Ahora hay que pedirlo con "📅 Ponerle fecha", y tiene una
@@ -296,10 +304,10 @@ Las tareas ahora tienen **`dueTime`** (`'HH:MM'`, 24 h) además de `dueDate`.
 
 ## 7e. Rumbo: infraestructura propia y secretos
 
-Definiciones del usuario que condicionan todo lo que viene:
+Definiciones de producto e infraestructura que condicionan todo lo que viene:
 
-- **Dominios:** tiene `ginialym.com` (**no mezclar con este proyecto**) y
-  `ginialtech.com`. La app iría en **`tareas.ginialtech.com`**.
+- **Dominio:** la app vive en **`tareas.ginialtech.com`**. Hay otros dominios del
+  mismo titular que **no se mezclan** con este proyecto.
 - **Hosting: Vercel** (las variables de entorno ya están cargadas ahí).
   Cloudflare queda solo como **DNS**, no como hosting.
 - **IA:** Groq SDK, **plan gratuito** por ahora.
@@ -329,10 +337,11 @@ Definiciones del usuario que condicionan todo lo que viene:
 > que no esté en esa lista, así que sin esto **el login con Google falla en
 > producción** aunque el dominio resuelva perfecto.
 
-### Requisito de seguridad (palabras del usuario)
+### Requisito de seguridad
 
-> *"si hay que guardar claves privadas. Nunca nada de lo que hacemos tiene que
-> poder ser visto desde el navegador. Inyectar un script o nada."*
+El requisito, tal como quedó fijado: **nada de lo que maneja el sistema puede
+quedar a la vista desde el navegador**, ni siquiera frente a un script inyectado
+en la página.
 
 **Regla dura: ninguna clave privada toca el cliente.** Ni en el bundle, ni en
 una variable `VITE_*`, ni en un fetch desde el navegador. Todo lo que necesite
@@ -356,9 +365,9 @@ Hay que tener presente la distinción, porque se presta a confusión:
 
 ### Regla firme: nada se filtra del lado del cliente (2026-09-20)
 
-Ratificado por la dueña del proyecto, y no depende de qué tan importante sea la
-app: *"por más que solo sea una todo list no se pueden filtrar del lado del
-cliente"*. **La seguridad no se negocia por tamaño del proyecto.**
+Ratificada como regla del proyecto, y no depende de qué tan importante parezca
+la app: que esto "sea solo una lista de tareas" no habilita a filtrar nada.
+**La seguridad no se negocia por tamaño del proyecto.**
 
 Son **dos cosas distintas** y conviene no mezclarlas:
 
@@ -388,7 +397,7 @@ borra**. Anotado en `docs/pendientes.md`.
 
 ### Pendientes en orden
 
-1. Variables de entorno (lo está haciendo el usuario).
+1. Variables de entorno.
 2. Worker en Cloudflare + `tareas.ginialtech.com`.
 3. Alertas de WhatsApp: **ojo**, para mandar mensajes proactivos (no como
    respuesta) la API de WhatsApp exige plantillas aprobadas por Meta y una
@@ -428,10 +437,8 @@ Detalles que costaron:
 
 ## 7f. Logs: pino, y cero `console`
 
-Pedido textual: *"Hay que poner pino para los logs en vercel. No me pongas ni un
-solo console!"*.
-
-**Regla: en ningún archivo se llama a `console`.** Se usa `log` de
+Decisión: los logs de producción se escriben con **pino**, y **en ningún archivo
+de la app se llama a `console`**. Se usa `log` de
 `src/lib/logger.ts`. Hay una regla `no-console: error` en `.oxlintrc.json` que
 lo hace fallar el lint, con excepción para el propio `logger.ts` y `api/`.
 
@@ -457,8 +464,8 @@ Cuidados que ya están resueltos y conviene no romper:
 
 ## 7g. La lista es una agenda
 
-Pedido: *"puse una para el lunes y está en la misma lista. Me gustaría que se
-separen. Así puedo hacer tipo agenda"*.
+Pedido: que una tarea puesta para un día futuro dejara de estar mezclada con
+todo lo demás, para poder leer la lista **como una agenda**.
 
 `src/lib/agenda.ts` agrupa las tareas en bloques con encabezado de día. El
 orden de los bloques es fijo para que la pantalla no se reacomode sola:
@@ -625,8 +632,8 @@ barra de gestos del iPhone, y `.app` lleva `padding-bottom` de sobra para que la
 ## 7m. Los dos avisos son independientes
 
 Antes el aviso de la hora iba **siempre** y el anticipado era un extra. Estaba
-mal: *"si ponés eso, solo va a avisar antes… tendría que poder elegir 2
-opciones. A la hora y x antes."*
+mal: elegir el anticipado apagaba el de la hora, cuando en realidad son dos
+opciones independientes y hay que poder tener las dos.
 
 Ahora son **dos casillas separadas**, y se puede tener cualquier combinación:
 
@@ -649,10 +656,10 @@ servidor, así que las tareas que ya tenían aviso siguen funcionando igual.
 
 ### Se elige desde la tarjeta, no desde el detalle
 
-Esto es lo importante y costó tres repeticiones darse cuenta. **Tres veces
+Esto es lo importante, y costó tres repeticiones darse cuenta. **Tres veces
 seguidas apareció el mismo problema**: la hora, los botones de aviso y la
-anticipación estaban todos escondidos detrás de los tres puntitos, y no se
-encontraban. *"Sí está. En los 3 puntitos. No lo había visto."*
+anticipación estaban todos escondidos detrás de los tres puntitos, y nadie los
+encontraba. La función existía y era exactamente igual a que no existiera.
 
 Ahora el ícono de Telegram de la tarjeta **abre un globo con las dos casillas**.
 El detalle sigue mostrando lo mismo (el componente es el mismo, con
@@ -741,11 +748,10 @@ Ahora las dos salen de variables:
 
 ## 7o. Dos listas: Agenda y Sin agendar (2026-09-21)
 
-Pedido: *"necesito hacer lista de tareas sin agendar… si no las sin fechas se
-van abajo del todo. Y si tengo muchas es poco práctico"*. Y el uso real, que es
-lo que define todo lo demás: *"la idea es hacer lista de los miles de
-pendientes y después decir, bue, esto lo voy a poner para hacer tal día. Y si
-quiero lo pongo hora"*.
+Pedido: las tareas sin fecha se iban al fondo de la agenda y, con muchas,
+dejaban de existir en la práctica. Y el uso real, que es lo que define todo lo
+demás: volcar primero la lista completa de pendientes y **después** repartir los
+días, poniéndole hora solo a lo que la necesita.
 
 O sea que son **dos momentos distintos**: volcar todo sin pensar en cuándo, y
 después repartir los días. El bloque "Sin fecha" al final de la agenda servía
@@ -758,7 +764,7 @@ mientras fueran tres; con treinta queda enterrado y deja de existir.
 task.status === 'todo' && !task.dueDate
 ```
 
-Las dos excepciones las eligió la dueña del proyecto, y las dos tienen motivo:
+Las dos excepciones son deliberadas, y las dos tienen motivo:
 
 | Caso | Dónde va | Por qué |
 |---|---|---|
@@ -812,6 +818,67 @@ un toque en vez de tres.
 El botón solo aparece en tareas **sin fecha**; si ya tiene día, se cambia en el
 detalle como siempre. Reusa la capa `.pop-tapa` del globo de avisos.
 
+## 7p. El agujero de `vinculos` (cerrado el 2026-09-25)
+
+Salió en una revisión de seguridad del 2026-09-20 y quedó abierto cinco días. Es
+el agujero más serio que tuvo el proyecto, así que conviene entender por qué
+pasó.
+
+La regla era esta:
+
+```js
+match /vinculos/{codigo} {
+  allow get, create, delete: if request.auth != null;
+}
+```
+
+Pedía estar logueado **y nada más**. Pero el `uid` que va adentro del documento
+lo elige el cliente (`useConfig.ts:80` manda `{ uid, creadoEn }`), así que
+cualquiera con una cuenta podía crear un código apuntando al `uid` de **otra
+persona**, mandarle `/start <codigo>` al bot, y el servidor le ataba **su** chat
+de Telegram a la cuenta ajena. A partir de ahí le llegaban los avisos con los
+títulos de las tareas de la víctima y podía tacharlas desde los botones del
+mensaje.
+
+**La lección, que es la de siempre en este archivo:** *estar autenticado* no es
+*ser el dueño*. `request.auth != null` responde "¿hay alguien?", no "¿es quien
+dice ser?". Cada vez que un documento lleva un `uid` adentro, hay que comparar
+ese campo contra `request.auth.uid` — si no, el dato que decide de quién es la
+cosa lo está eligiendo el atacante.
+
+Se cerraron **tres** puertas, no una:
+
+| Antes | Ahora | Por qué |
+|---|---|---|
+| `create` para cualquier autenticado | `create` solo si `d.uid == request.auth.uid` | El agujero de verdad. |
+| `get` abierto | `get: if false` | El cliente nunca lee vínculos —solo escribe—. Abierto, quien averiguara un código sabía de quién era. |
+| `delete` abierto | `delete: if false` | El que los borra es el servidor. Abierto, se podía quemar el código de otra persona para que no pudiera vincularse. |
+
+Además `esVinculoValido()` usa `keys().hasOnly(['uid','creadoEn'])`, así que no
+se puede colar ningún campo extra.
+
+> **Quién borra qué:** el servidor usa la cuenta de servicio (`api/telegram.ts`),
+> que **se saltea las reglas por completo**. Por eso cerrarle `delete` y `get` al
+> navegador no le saca nada: el que consume y borra el código sigue pudiendo.
+
+**Verificado en producción**, no supuesto — contra la base real, con una sesión
+de verdad y la regla ya desplegada:
+
+| Prueba | Resultado |
+|---|---|
+| Crear un vínculo con el uid propio | `200` permitido — la vinculación legítima sigue andando |
+| Crear un vínculo con el uid de otra persona | `403` rechazado |
+| Leer un vínculo (`get`) | `403` rechazado |
+
+> La prueba dejó **dos documentos sueltos** en `vinculos` (los dos casos que sí
+> tenían que funcionar). Se borraron a mano desde la consola de Firebase el
+> mismo día, uno por uno, y la colección quedó vacía.
+>
+> **Detalle a tener en cuenta la próxima vez que se pruebe esto:** la regla
+> nueva le cierra el `delete` al navegador, así que lo que se crea probando
+> **no se puede limpiar desde la app**. O se borra desde la consola, o se hace
+> con la cuenta de servicio, que es la única que se saltea las reglas.
+
 ## 8. Convenciones
 
 - **UI y comentarios en español rioplatense.** Nombres de código en inglés
@@ -845,6 +912,13 @@ No están hechas. Si se retoman, revisar primero si sirven al objetivo del punto
   uid**. Los datos se movieron a `users/{uid}/tasks`, el store pasó a crearse por
   usuario y se agregó validación de forma en las reglas.
 
+- **2026-09-25** — Se cerró el agujero de `/vinculos` (punto 7p), que permitía
+  quedarse con los avisos de Telegram de otra cuenta. Reglas desplegadas con
+  `bun run rules` y **verificadas contra producción**: la vinculación propia
+  sigue dando `200` y la falsificación ahora da `403`. Salió al revisar el repo
+  para hacerlo público — la decisión fue arreglarlo igual, porque estaba mal
+  aunque el repo siguiera privado.
+
 - **2026-09-21** — La lista se partió en dos: **Agenda** y **Sin agendar**
   (punto 7o), con el botón 📅 para ponerle fecha desde la tarjeta misma.
   Verificado en el navegador contra la base real: anotar sin fecha cambia solo
@@ -859,13 +933,12 @@ No están hechas. Si se retoman, revisar primero si sirven al objetivo del punto
 
 - **2026-09-19** — Se agregó hora límite (`dueTime`) y se hicieron visibles los
   campos de fecha/hora, que estaban transparentes e invisibles.
-  **Primer deploy a producción**: push a `main` de
-  `marcelaborgarello/todo-list-2026`, que Vercel publica en
+  **Primer deploy a producción**: push a `main`, que Vercel publica en
   **https://tareas.ginialtech.com** (DNS por Cloudflare, en DNS only).
   Verificado: el sitio carga con HTTPS y las variables `VITE_*` de Vercel
   llegan bien (se ve la pantalla de login, no el modo local).
 
-### Bloqueado esperando al humano
+### Lo que dependió de configuración manual en consolas
 
 **1. Autorizar el dominio de producción — BLOQUEANTE.** Sin esto el login con
 Google falla en `tareas.ginialtech.com` aunque el sitio cargue perfecto

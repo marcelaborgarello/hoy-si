@@ -34,6 +34,21 @@ Se descartaron, y por qué:
 En el Worker, pestaña **Logs** → **Begin log stream**. Cada minuto tiene que
 aparecer una línea. Si dice `401`, el `CRON_SECRET` de los dos lados no coincide.
 
+## Dispararlo a mano (diagnóstico)
+
+Abrir la URL del Worker en el navegador **ya no dispara nada**: responde `404`.
+Es a propósito — antes era un botón público que forzaba una corrida de avisos a
+quien conociera la dirección. Ahora hay que mandar el secreto en un encabezado:
+
+```bash
+curl -H "x-cron-secret: <el mismo CRON_SECRET>" https://<tu-worker>.workers.dev
+```
+
+> ⚠️ **Cambiar `despertador.js` en el repo no cambia nada en producción.** Hay
+> que volver a pegarlo en Cloudflare: el Worker → **Edit code** → pegar todo →
+> **Deploy**. Para verificar que quedó, abrir la URL en el navegador: tiene que
+> responder `404` y no los contadores de la corrida.
+
 ## Lo que hay que saber
 
 - **Si el Worker se cae, no llegan los avisos y nadie se entera.** La app sigue

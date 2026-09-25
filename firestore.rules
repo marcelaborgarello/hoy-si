@@ -42,11 +42,17 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Códigos de vinculación de Telegram: los crea el navegador y los
-    // consume el servidor. Nadie puede leer los de otra persona.
+    // Códigos de vinculación de Telegram: los crea el navegador y los consume
+    // el servidor, que usa la cuenta de servicio y se saltea estas reglas.
+    //
+    // Desde el navegador lo ÚNICO que se puede hacer es crear un código que
+    // apunte a la propia cuenta. Leer y borrar no le hacen falta nunca —
+    // `useConfig.ts` solo escribe— y estaban abiertos de más: con `get`
+    // cualquiera que averiguara un código veía de quién era, y con `delete`
+    // podía quemar el de otra persona para que no lograra vincularse.
     match /vinculos/{codigo} {
-      allow get, create, delete: if request.auth != null;
-      allow list, update: if false;
+      allow create: if request.auth != null && esVinculoValido();
+      allow get, list, update, delete: if false;
     }
 
     // Todo lo que no esté declarado arriba queda cerrado.
@@ -66,6 +72,25 @@ service cloud.firestore {
     let d = request.resource.data;
     return d.get('telegramChatId', null) == null
       && (d.get('avisos', false) is bool);
+  }
+
+  // Un código de vinculación solo puede apuntar a la cuenta que lo crea.
+  //
+  // ⚠️ Esta es la comparación que faltaba, y era un agujero de verdad: el `uid`
+  // que va adentro del documento lo elige el cliente, así que sin comparar
+  // contra `request.auth.uid` cualquiera con una cuenta podía crear un código
+  // con el uid de OTRA persona, mandarle /start al bot con ese código, y el
+  // servidor le ataba SU chat de Telegram a la cuenta ajena. A partir de ahí le
+  // llegaban los avisos con los títulos de las tareas de la víctima, y podía
+  // tacharlas desde los botones del mensaje.
+  //
+  // El uid de `request.auth` lo arma Google verificando la firma del ID token:
+  // ese no se puede falsear (ver el comentario de arriba de todo).
+  function esVinculoValido() {
+    let d = request.resource.data;
+    return d.keys().hasOnly(['uid', 'creadoEn'])
+      && d.uid == request.auth.uid
+      && d.creadoEn is number;
   }
 
   // Solo un nombre, y acotado: esto lo escribe el navegador.
